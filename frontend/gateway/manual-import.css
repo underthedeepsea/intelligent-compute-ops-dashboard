@@ -1,0 +1,27 @@
+.manual-import{max-width:1180px;margin:auto}
+.manual-import .manual-intro h2{font-size:26px;margin:14px 0 8px}
+.manual-import p{line-height:1.7;color:#566277}
+.manual-import .manual-steps{display:grid;grid-template-columns:repeat(4,1fr);padding:0;list-style:none;counter-reset:step;border-top:1px solid var(--line,#e8ebef);border-bottom:1px solid var(--line,#e8ebef);margin:24px 0}
+.manual-import .manual-steps li{padding:17px 8px;counter-increment:step;color:#485367}
+.manual-import .manual-steps li:before{content:counter(step);color:var(--orange,#ff7a1a);margin-right:10px}
+.manual-import .manual-toolbar{display:flex;gap:10px;flex-wrap:wrap;margin:18px 0}
+.manual-import .manual-target{background:#fff7f0;border-left:3px solid var(--orange,#ff7a1a);padding:20px 24px;margin:22px 0}
+.manual-import h3{margin:0 0 9px;font-size:18px}
+.manual-import .manual-counts{display:flex;gap:48px;margin-top:20px;line-height:1.8}
+.manual-import small{color:#566277}
+.manual-import .manual-guide{margin:24px 0}
+.manual-import .manual-replace{color:#80500d;padding:12px 15px;background:#fff9eb;border:1px solid #ead9b6}
+.manual-import .manual-file{display:block;max-width:620px;margin:18px 0}
+.manual-import .manual-file input{display:block;width:100%;margin-top:10px}
+.manual-import .manual-preview{margin-top:24px;padding:22px;border:1px solid #b9dbca;background:#f0faf5}
+.manual-import .manual-status:empty{display:none}
+.manual-import .manual-status{color:#216147;line-height:1.7;margin:18px 0}
+.manual-import .manual-readonly{color:#80500d}
+.manual-import button:disabled,.manual-import input:disabled,.manual-import select:disabled{opacity:.5;cursor:wait}
+.manual-import [data-permanent-disabled=true]:disabled{cursor:not-allowed}
+@media(max-width:800px){.manual-import .manual-steps{grid-template-columns:repeat(2,1fr)}
+.manual-import .manual-counts{flex-direction:column;gap:12px}}
+
+.manual-import .manual-source{padding:20px;background:#fff7f0;border:1px solid #f2d7c0;margin:22px 0}
+.manual-import .manual-recovery{color:#9b3b18;font-weight:600}
+.manual-import .manual-target,.manual-import .manual-preview,.manual-import .manual-source{color:var(--text,#172033)}

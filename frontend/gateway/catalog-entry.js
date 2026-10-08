@@ -1,0 +1,103 @@
+(function(root){
+'use strict';
+const types={teams:'团队',businesses:'业务',models:'模型',services:'推理服务','pd-groups':'P/D 组',endpoints:'P / D 实例 · Endpoint',clusters:'集群','runtime-members':'Node / Pod 部署'};
+const focusTypes={teams:'team',businesses:'business',models:'model',services:'service','pd-groups':'pd_group',endpoints:'endpoint',clusters:'cluster','runtime-members':'pod'};
+const base=r=>'/api/v1/catalog/'+r;
+async function readSnapshot(request,r,id,isCurrent=()=>true){
+ for(let n=0;n<3;n++){
+  if(!isCurrent())return null;
+  const [detail,relations]=await Promise.all([request(base(r)+'/'+encodeURIComponent(id)),r==='businesses'?request(base(r)+'/'+encodeURIComponent(id)+'/service-bindings'):Promise.resolve(null)]);
+  if(!isCurrent())return null;
+  if(!Number.isSafeInteger(detail.data?.version)||detail.data.version<1)throw new Error('目录记录版本无效');
+  if(!relations)return {record:detail.data,bindings:[]};
+  if(!Number.isSafeInteger(relations.data?.version)||!Array.isArray(relations.data?.items))throw new Error('业务关系响应无效');
+  if(detail.data.version===relations.data.version)return {record:detail.data,bindings:relations.data.items};
+ }
+ throw new Error('业务正在被其他用户修改，无法取得一致版本。请重新读取后再编辑。');
+}
+function nodeMembers(rows,focusId){
+ const colon=focusId.indexOf(':');if(colon<0)return [];
+ const cluster=focusId.slice(0,colon);let token=focusId.slice(colon+1),origin='CONFIGURED';
+ if(token.startsWith('DEMO:')){origin='DEMO';token=token.slice(5);}
+ try{const uid=decodeURIComponent(token);return rows.filter(x=>x.cluster_id===cluster&&x.node_uid===uid&&x.origin===origin&&x.enabled&&x.pod_uid&&x.observed_at);}catch{return [];}
+}
+function runtimeValidation(data){
+ if(data.node_uid||data.node_name){if(!data.node_uid||!data.node_name||!data.pod_uid||!data.observed_at)return '登记 Node 位置需要 Node UID、Node 名称、Pod UID 与实际观测时间；不登记位置时请清空 Node 两项。';}
+ if(data.observed_at&&(!/T.*(?:Z|[+-]\d{2}:\d{2})$/.test(data.observed_at)||!Number.isFinite(Date.parse(data.observed_at))))return '观测时间请填写含时区的 ISO 时间，如 2026-09-27T08:00:00+08:00。';
+ return '';
+}
+function mount(host,{api,escape:e,session,initial={},onSaved=async()=>{}}){
+ let alive=true,hydrated=false,seq=0,data={},kind=types[initial.collection]?initial.collection:'teams',record=null,bindings=[],loading=true,saving=false,listQuery='',nodeScope=null,view='directory',metadataBaseline='',relationsBaseline='';
+ const writable=session.roles.includes('catalog_admin'),envs=session.environments||[];
+ const current=n=>alive&&n===seq;
+ const status=(text,error=false)=>{const el=host.querySelector('[data-entry-status]');if(el){el.textContent=text;el.className=error?'error':'entry-success';el.hidden=!text;}};
+ const error=err=>status(err.payload?.error?.code==='VERSION_CONFLICT'?'版本冲突：当前输入已保留。请记录修改内容，点击“重新读取”后核对再保存。':err.message+(err.payload?.error?.details?.fields?'：'+JSON.stringify(err.payload.error.details.fields):''),true);
+ async function all(r){let rows=[],cursor='';for(let n=0;n<100;n++){const v=await api.request(base(r)+'?limit=100'+(cursor?'&cursor='+encodeURIComponent(cursor):''));rows.push(...v.data.items);cursor=v.data.next_cursor;if(!cursor)return rows;}throw new Error('目录超过浏览器加载上限，请联系管理员缩小范围。');}
+ async function fetchData(){return Object.fromEntries(await Promise.all(Object.keys(types).map(async r=>[r,await all(r)])));}
+ const title=x=>x.name+' · '+x.environment_code+(x.enabled?'':'（已停用）');
+ function list(){const rows=(data[kind]||[]).filter(x=>(!nodeScope||nodeScope.includes(x.id))&&(x.name+' '+x.code+' '+x.environment_code).toLowerCase().includes(listQuery.toLowerCase()));return rows.map(x=>`<button type="button" class="entry-record" data-entry-id="${e(x.id)}"><span class="entry-record-main"><b>${e(x.name)}</b><em>配置 →</em></span><span>${e(x.code)} · ${e(x.environment_code)}${x.enabled?'':' · 已停用'}</span></button>`).join('')||'<p class="entry-hint">当前分类暂无匹配记录。</p>';}
+ function shell(){const count=r=>(data[r]||[]).length;
+  const intro=`<div class="entry-intro"><div><span class="entry-eyebrow">Gateway · Catalog</span><b>资源与关系</b><p>从对象进入配置；保存的关系可回到资源映射核对。</p></div><button class="btn" data-route="keys">API Key 归属与模型授权 ↗</button></div>`;
+  if(view==='directory')host.innerHTML=intro+`<div data-entry-status role="status" hidden></div><div class="entry-overview">${Object.entries(types).map(([r,label])=>`<button type="button" class="entry-type-card ${r===kind?'active':''}" data-entry-type="${r}" ${hydrated?'':'disabled'}><span>${e(label)}</span><strong>${hydrated?count(r):'—'}</strong><small>查看目录 →</small></button>`).join('')}</div><section class="panel entry-directory"><div class="entry-directory-head"><div><span class="entry-eyebrow">${e(types[kind])} · ${hydrated?count(kind):'—'} 项</span><h2>${e(types[kind])}目录</h2><p>选择对象查看配置，或建立一项新资源。</p></div>${writable?`<button class="btn primary" type="button" data-entry-new ${hydrated?'':'disabled'}>＋ 新建${e(types[kind])}</button>`:''}</div><div class="entry-directory-tools"><label>切换资源类型<select data-entry-kind ${hydrated?'':'disabled'}>${Object.entries(types).map(([r,l])=>`<option value="${r}" ${r===kind?'selected':''}>${l}</option>`).join('')}</select></label><input data-entry-search aria-label="搜索录入目录" placeholder="搜索名称 / 代码 / 环境" value="${e(listQuery)}"></div>${nodeScope?'<p class="entry-hint">此 Node 的部署记录；共享 Node 时请选择具体 Pod。<button class="catalog-link" data-entry-clear>显示全部</button></p>':''}<div data-entry-list>${hydrated?list():'<p class="entry-hint">正在读取资源目录…</p>'}</div></section>`;
+  else host.innerHTML=`<div class="entry-detail-nav"><button type="button" class="catalog-link" data-entry-back>← 返回${e(types[kind])}目录</button><span>资源与关系 / ${e(types[kind])} / ${record?.id?e(record.name):'新建'}</span></div><div class="entry-detail-layout"><section class="panel entry-editor"><div data-entry-status role="status" hidden></div><div data-entry-form-area></div></section></div>`;
+  if(view==='detail')renderForm();}
+ function optionRows(r,value,env,predicate=()=>true,optional=false){return `<option value="">${optional?'不关联':'请选择'}</option>`+(data[r]||[]).filter(x=>x.environment_code===env&&((x.enabled&&predicate(x))||x.id===value)).map(x=>`<option value="${e(x.id)}" ${x.id===value?'selected':''}>${e(title(x))}</option>`).join('');}
+ function environment(value){const values=[...new Set([...envs,...(record?.id?[record.environment_code]:[])])];return `<label>环境<select name="environment_code" required ${record?.id?'disabled':''}><option value="">请选择环境</option>${values.map(v=>`<option ${v===value?'selected':''}>${e(v)}</option>`).join('')}</select><small>关系必须处于同一环境；已保存记录不可迁移环境。</small></label>`;}
+ function input(f,label,value='',required=false,max=160,type='text'){return `<label>${label}<input name="${f}" type="${type}" value="${e(value??'')}" ${required?'required':''} ${type==='number'?'min="1" step="1"':`maxlength="${max}"`}></label>`;}
+ function select(f,label,r,value,env,predicate,optional=false){return `<label>${label}<select name="${f}" ${optional?'':'required'}>${optionRows(r,value,env,predicate,optional)}</select></label>`;}
+ function extras(v){const env=v.environment_code||'';
+  if(kind==='businesses')return select('team_id','所属团队','teams',v.team_id,env)+input('owner','业务负责人',v.owner,true)+`<label>关键业务<select name="critical"><option value="false" ${!v.critical?'selected':''}>普通业务</option><option value="true" ${v.critical?'selected':''}>关键业务</option></select></label>`+input('watch_order','关键业务展示顺序（关键业务必填）',v.watch_order,false,0,'number');
+  if(kind==='services')return select('model_id','部署的模型','models',v.model_id,env)+`<label>部署模式<select name="deployment_mode"><option value="COMBINED" ${v.deployment_mode!=='SPLIT_PD'?'selected':''}>合并部署 · COMBINED</option><option value="SPLIT_PD" ${v.deployment_mode==='SPLIT_PD'?'selected':''}>P/D 分离 · SPLIT_PD</option></select></label>`;
+  if(kind==='pd-groups')return select('service_id','所属 P/D 分离服务','services',v.service_id,env,x=>x.deployment_mode==='SPLIT_PD');
+  if(kind==='clusters')return input('region','地域 / 机房',v.region)+`<p class="entry-hint">监控来源与 CSV 快照在 <button type="button" class="catalog-link" data-route="monitoring">监控数据管理</button> 维护。</p>`;
+  if(kind==='endpoints')return select('service_id','所属服务','services',v.service_id,env)+select('cluster_id','部署集群','clusters',v.cluster_id,env)+select('pd_group_id','所属 P/D 组','pd-groups',v.pd_group_id,env,x=>x.service_id===v.service_id,true)+`<label>实例角色<select name="role" required>${roles(v.service_id).map(x=>`<option ${v.role===x?'selected':''}>${x}</option>`).join('')}</select><small>PREFILL = P 实例，DECODE = D 实例。</small></label>`+input('address_ref','Endpoint 地址引用（不填写凭证）',v.address_ref);
+  if(kind==='runtime-members')return select('endpoint_id','所属实例 / Endpoint','endpoints',v.endpoint_id,env)+select('cluster_id','所属集群（由 Endpoint 确定）','clusters',v.cluster_id,env)+input('namespace','Pod 命名空间',v.namespace,true,120)+input('workload_ref','工作负载引用',v.workload_ref)+input('pod_name','Pod 名称',v.pod_name)+input('pod_uid','Pod UID（实际身份）',v.pod_uid,false,120)+input('node_name','Node 名称',v.node_name)+input('node_uid','Node UID（实际身份）',v.node_uid,false,120)+input('observed_at','实际观测时间（ISO 8601，含时区）',v.observed_at,false,60)+`<p class="entry-hint full">Node 拓扑要求 Node 名称、Node UID、Pod UID 和实际观测时间齐全。只登记工作负载时可留空；不会自动生成观测身份或时间。Pod 在图中的名称使用上方“显示名称”。</p>`;
+  return '';
+ }
+ function roles(serviceId){return data.services?.find(x=>x.id===serviceId)?.deployment_mode==='SPLIT_PD'?['ROUTER','PREFILL','DECODE']:['COMBINED'];}
+ function relationHTML(){if(kind!=='businesses')return '';if(!record?.id)return '<div class="entry-relations"><h3>业务依赖的服务</h3><p class="entry-hint">先保存业务，再勾选服务并保存关系。业务归属和服务依赖是两项独立配置。</p></div>';
+ const selected=new Set(bindings.filter(x=>x.enabled).map(x=>x.service_id));return `<section class="entry-relations"><h3>业务依赖的服务</h3><p class="entry-hint">配置业务 → 服务连线；不代表已发生真实调用。与上方元数据分别保存。</p><form id="catalog-bindings-form"><fieldset ${!writable?'disabled':''}><div class="entry-binding-list">${(data.services||[]).filter(x=>x.environment_code===record.environment_code&&(x.enabled||selected.has(x.id))).map(x=>`<label><input type="checkbox" name="service_ids" value="${e(x.id)}" ${selected.has(x.id)?'checked':''}><span>${e(title(x))}</span></label>`).join('')||'<p class="entry-hint">当前环境没有服务，请先录入推理服务。</p>'}</div>${writable?'<button class="btn primary" type="submit">保存业务服务关系</button>':''}</fieldset></form></section>`;}
+ function renderForm(){const area=host.querySelector('[data-entry-form-area]');if(loading){area.innerHTML='<p class="entry-hint">正在读取目录与一致版本…</p>';return;}
+ const v=record||{environment_code:envs.length===1?envs[0]:''};area.innerHTML=`<div class="entry-editor-head"><div><span class="entry-eyebrow">${e(types[kind])} · ${record?.id?'对象配置':'新建资源'}</span><h2>${record?.id?e(record.name):'新建'+e(types[kind])}</h2><p>${record?.id?e(record.code)+' · '+e(record.environment_code):'填写基础信息并保存到统一目录'}</p></div><span class="pill neutral">${writable?'可编辑':'只读 · operator'}</span></div><p class="entry-hint">${record?.id?'记录状态：'+(record.enabled?'启用':'已停用')+' · 版本 <b data-entry-version>'+e(record.version)+'</b>':'保存后持久写入统一目录；不会部署服务或变更执行端。'}</p><div class="entry-config-grid"><section class="entry-config-primary"><h3>资源信息</h3><form id="catalog-resource-form"><fieldset ${!writable?'disabled':''}><div class="form-grid">${input('code','稳定代码（同类型全局唯一）',v.code,true,120)}${input('name','显示名称',v.name,true,240)}${environment(v.environment_code)}${extras(v)}</div><div class="form-actions">${record?.id?'<button class="btn" type="button" data-entry-reload>重新读取（放弃本页草稿）</button>':''}${writable?'<button class="btn primary" type="submit">保存资源信息</button>':''}</div></fieldset></form></section><aside class="entry-config-side"><h3>关系与去向</h3><p class="entry-hint">目录中的归属与部署位置属于配置关系。这里不展示实时调用或执行端生效状态。</p>${record?.id&&record.enabled?`<div class="entry-saved-link"><button class="btn" data-focus-type="${focusTypes[kind]}" data-focus-id="${e(record.id)}">查看此资源的更新映射 ↗</button></div>`:''}${relationHTML()}</aside></div>`;syncParents();}
+ function values(){const form=host.querySelector('#catalog-resource-form');const v=Object.fromEntries([...form.elements].filter(x=>x.name).map(x=>[x.name,x.value]));v.environment_code=record?.environment_code||form.elements.environment_code.value;return v;}
+ const metadataSnapshot=()=>{const form=host.querySelector('#catalog-resource-form');return form?JSON.stringify([...form.elements].filter(el=>el.name).map(el=>[el.name,el.type==='checkbox'?el.checked:el.value])):'';};
+ const relationsSnapshot=()=>JSON.stringify([...host.querySelectorAll('#catalog-bindings-form input[name="service_ids"]')].filter(el=>el.checked).map(el=>el.value).sort());
+ function setBaselines(){metadataBaseline=metadataSnapshot();relationsBaseline=relationsSnapshot();}
+ function dirty(){return view==='detail'&&!loading&&(metadataSnapshot()!==metadataBaseline||relationsSnapshot()!==relationsBaseline);}
+ function confirmLeave(){if(saving){status('正在保存，请等待完成后再离开。',true);return false;}return !dirty()||root.confirm('此页有未保存的修改。确定放弃并离开吗？');}
+ function syncParents(changed){const f=host.querySelector('#catalog-resource-form');if(!f)return;const v=values(),env=v.environment_code;
+  const refresh=(field,r,predicate,optional=false)=>{const el=f.elements[field];if(!el)return;const old=changed==='environment_code'?'':el.value;el.innerHTML=optionRows(r,old,env,predicate,optional);};
+  if(['businesses','services','pd-groups','endpoints','runtime-members'].includes(kind)){
+   if(kind==='businesses')refresh('team_id','teams');if(kind==='services')refresh('model_id','models');if(kind==='pd-groups')refresh('service_id','services',x=>x.deployment_mode==='SPLIT_PD');
+   if(kind==='endpoints'){refresh('service_id','services');refresh('cluster_id','clusters');const s=f.elements.service_id.value,split=data.services.find(x=>x.id===s)?.deployment_mode==='SPLIT_PD';refresh('pd_group_id','pd-groups',x=>x.service_id===s,!split);if(changed==='service_id'||!split){if(!split)f.elements.pd_group_id.value='';else if(data['pd-groups'].find(x=>x.id===f.elements.pd_group_id.value)?.service_id!==s)f.elements.pd_group_id.value='';}f.elements.pd_group_id.disabled=!split;f.elements.pd_group_id.required=!!split;const old=f.elements.role.value;f.elements.role.innerHTML=roles(s).map(x=>`<option ${x===old?'selected':''}>${x}</option>`).join('');}
+   if(kind==='runtime-members'){refresh('endpoint_id','endpoints');const endpoint=data.endpoints.find(x=>x.id===f.elements.endpoint_id.value);f.elements.cluster_id.innerHTML=optionRows('clusters',endpoint?.cluster_id||'',env,x=>x.id===endpoint?.cluster_id);f.elements.cluster_id.value=endpoint?.cluster_id||'';f.elements.cluster_id.disabled=true;}
+  }
+ }
+ async function choose(id){if(!alive||!hydrated)return;const mine=++seq;view='detail';record=null;bindings=[];loading=true;saving=false;shell();try{let snapshot=id?await readSnapshot(api.request,kind,id,()=>current(mine)):null;if(!current(mine))return;record=snapshot?.record||null;bindings=snapshot?.bindings||[];loading=false;shell();setBaselines();}catch(err){if(current(mine)){loading=true;error(err);host.querySelector('[data-entry-form-area]').innerHTML='<p class="entry-hint">未取得可编辑快照。请返回目录重新选择记录。</p>';}}}
+ function busy(value){saving=value;host.querySelectorAll('fieldset').forEach(el=>el.disabled=value||!writable);host.querySelectorAll('[data-entry-back],[data-entry-reload]').forEach(el=>el.disabled=value);}
+ async function save(form){if(!writable||saving||loading)return;const mine=seq,savedKind=kind,id=record?.id,isRelation=form.id==='catalog-bindings-form';let payload;
+  if(isRelation){payload={expected_version:record.version,service_ids:[...new FormData(form).getAll('service_ids')]};if(payload.service_ids.length>100){status('每项业务最多选择 100 个服务。',true);return;}}
+  else{payload=values();delete payload.environment_code;payload.environment_code=record?.environment_code||form.elements.environment_code.value;if(kind==='businesses'){payload.critical=payload.critical==='true';payload.watch_order=payload.watch_order?Number(payload.watch_order):null;if(payload.critical&&!payload.watch_order){status('关键业务需要正整数展示顺序。',true);return;}}if(kind==='endpoints')payload.pd_group_id=form.elements.pd_group_id.value||null;if(kind==='runtime-members'){payload.cluster_id=form.elements.cluster_id.value;for(const f of ['pod_uid','node_uid','observed_at'])payload[f]=payload[f]||null;const invalid=runtimeValidation(payload);if(invalid){status(invalid,true);return;}}if(id)payload.expected_version=record.version;}
+  busy(true);status('正在保存…');let persisted=false;
+  try{const response=await api.request(base(savedKind)+(id?'/'+encodeURIComponent(id):'')+(isRelation?'/service-bindings':''),{method:isRelation?'PUT':id?'PATCH':'POST',body:payload});persisted=true;if(!current(mine))return;
+   const relationDraft=[...host.querySelectorAll('#catalog-bindings-form input:checked')].map(el=>el.value);
+   if(isRelation){record={...record,version:response.data.version};bindings=response.data.items;}
+   else record=response.data;
+   // Both business panels share one version. Re-read matching snapshots after either write.
+   if(savedKind==='businesses'){const coherent=await readSnapshot(api.request,savedKind,record.id,()=>current(mine));if(!current(mine))return;if(coherent.record.version!==record.version)throw new Error('保存后记录又被其他用户修改，已保留当前输入，请重新读取核对。');if(!isRelation){record=coherent.record;bindings=coherent.bindings;}}
+   const fresh=await fetchData();if(!current(mine))return;data=fresh;await onSaved();if(!current(mine))return;
+   if(!id){shell();setBaselines();}else{host.querySelectorAll('[data-entry-version]').forEach(el=>el.textContent=record.version);if(!isRelation&&savedKind==='businesses'){bindings=relationDraft.map(service_id=>({service_id,enabled:true}));}if(isRelation)relationsBaseline=relationsSnapshot();else metadataBaseline=metadataSnapshot();}
+   status((isRelation?'业务服务关系':'资源信息')+'已保存，目录已更新。'+(!isRelation&&savedKind==='businesses'?'服务关系请单独保存。':'可打开更新映射核对连线。'));
+  }catch(err){if(current(mine)){if(persisted){loading=true;status('保存已成功，但刷新未完成。请重新选择该记录核对后继续编辑。'+err.message,true);}else error(err);}}
+  finally{if(current(mine)){busy(false);if(loading)host.querySelectorAll('fieldset').forEach(el=>el.disabled=true);}}
+ }
+ const click=ev=>{const b=ev.target.closest('button');if(!b||saving||!hydrated)return;if(b.hasAttribute('data-entry-back')){if(!confirmLeave())return;seq++;view='directory';record=null;bindings=[];loading=false;shell();}if(b.hasAttribute('data-entry-type')){kind=b.dataset.entryType;nodeScope=null;listQuery='';shell();}if(b.hasAttribute('data-entry-new')){nodeScope=null;choose();}if(b.hasAttribute('data-entry-id'))choose(b.dataset.entryId);if(b.hasAttribute('data-entry-reload'))choose(record.id);if(b.hasAttribute('data-entry-clear')){nodeScope=null;shell();}};
+ const change=ev=>{if(!hydrated)return;if(ev.target.hasAttribute('data-entry-kind')){kind=ev.target.value;nodeScope=null;listQuery='';shell();}else if(ev.target.closest('#catalog-resource-form'))syncParents(ev.target.name);};
+ const inputEvent=ev=>{if(ev.target.hasAttribute('data-entry-search')){listQuery=ev.target.value;host.querySelector('[data-entry-list]').innerHTML=list();}};
+ const submit=ev=>{if(!ev.target.id.startsWith('catalog-'))return;ev.preventDefault();ev.stopPropagation();save(ev.target);};
+ host.addEventListener('click',click);host.addEventListener('change',change);host.addEventListener('input',inputEvent);host.addEventListener('submit',submit);
+ shell();(async()=>{const mine=seq;try{const fresh=await fetchData();if(!current(mine))return;data=fresh;hydrated=true;let id=initial.id;if(initial.nodeFocus){nodeScope=nodeMembers(data['runtime-members'],initial.nodeFocus).map(x=>x.id);id=nodeScope.length===1?nodeScope[0]:null;}if(id)await choose(id);else{loading=false;shell();}if(initial.nodeFocus&&nodeScope?.length!==1)status(nodeScope.length?'此 Node 被多个 Pod 使用，请选择对应部署记录。':'未找到此 Node 对应的可编辑部署记录。',!nodeScope.length);}catch(err){if(current(mine))error(err);}})();
+ return {confirmLeave,destroy(){alive=false;seq++;host.removeEventListener('click',click);host.removeEventListener('change',change);host.removeEventListener('input',inputEvent);host.removeEventListener('submit',submit);}};
+}
+const api={mount,readSnapshot,nodeMembers,runtimeValidation};if(typeof module!=='undefined')module.exports=api;root.GatewayCatalogEntry=api;
+})(typeof window!=='undefined'?window:globalThis);

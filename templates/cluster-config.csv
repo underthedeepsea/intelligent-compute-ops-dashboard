@@ -1,0 +1,2 @@
+﻿environment_code,cluster_code,cluster_name,region,model_code,model_name,service_code,service_name,deployment_mode,pd_group_code,pd_group_name,endpoint_code,endpoint_name,role,runtime_code,pod_uid,pod_name,namespace,workload_ref,node_uid,node_name,observed_at
+local,example-cluster,示例集群,华东,example-model,示例模型,example-service,示例服务,SPLIT_PD,example-pd,示例 P/D,example-prefill,示例 Prefill,PREFILL,,,,,,,,

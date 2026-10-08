@@ -1,0 +1,41 @@
+/* API-backed 03/04 retain the original TV canvas; unavailable values remain explicit. */
+.restored-faults .rf-stat-note{font-size:10px;color:#718594;margin-top:8px}
+.restored-faults .rf-unknown,.restored-faults .rf-unknown .f-quiet-mark{color:#8ba4b1}
+.restored-faults .rf-unknown .f-quiet-mark>i{background:#819ba9;box-shadow:none;animation:none}
+.restored-faults .rf-neutral{--fault:#8ba4b1;border-color:#38505d;background:linear-gradient(115deg,#172936,#101c29);color:#cedbe0}
+.restored-faults .rf-neutral .f-priority{background:#304651;color:#dce8ec}
+.restored-faults .rf-neutral .f-resource-top,.restored-faults .rf-neutral .f-resource-object,.restored-faults .rf-neutral .f-symptom{color:#a4bac5}
+.restored-faults .f-resource-top small{max-width:38%;overflow:hidden;text-overflow:ellipsis}
+.restored-faults .f-stat>strong{font-size:34px}.restored-faults .f-stat-total>strong{font-size:55px}
+.restored-faults .f-detail-identity h2{font-size:19px;line-height:1.35;max-height:52px;overflow:hidden;overflow-wrap:anywhere}
+.restored-faults #f-detail-deck{min-height:0;flex:1;overflow:hidden}
+.restored-faults #f-detail-deck .f-long-name{font-size:20px;line-height:1.5;margin:12px 0;overflow-wrap:anywhere;white-space:normal;max-height:none}
+.restored-faults .f-signals{gap:8px}.restored-faults .f-signals>div{min-width:0}.restored-faults .f-signals strong{font-size:20px}.restored-faults .f-signals small{font-size:11px}
+.restored-faults .live-source{font-size:11px;line-height:1.7;color:#8da3b0;margin-top:12px;overflow-wrap:anywhere}
+.restored-faults .f-detail-foot a{font-size:11px;color:#9bc8c5}
+.restored-faults .f-registry-foot button,.restored-faults .f-registry-head button,.restored-faults .f-deck-footer button{border:1px solid #38505d;background:#122534;border-radius:4px;color:#bfd3db;padding:3px 9px;font-size:12px}
+.restored-faults .rf-directory{position:absolute;left:4px;bottom:0;z-index:5;max-width:530px;color:#8fa7b4;font-size:12px}
+.restored-faults.has-faults .rf-directory{bottom:-18px}
+.restored-faults .rf-directory summary{cursor:pointer;padding:4px 0}
+.restored-faults .rf-directory>div{position:absolute;bottom:28px;left:0;width:500px;max-height:390px;overflow:auto;background:#0b1925;border:1px solid #304b59;padding:12px;border-radius:8px;box-shadow:0 12px 45px #0008}
+.restored-faults .rf-directory button{display:block;width:100%;background:#132735;border:1px solid #284452;text-align:left;color:#d0dee5;padding:10px;margin-bottom:8px;border-radius:6px;overflow-wrap:anywhere}
+.restored-faults .rf-directory button small{display:block;color:#8da4b2;margin-top:7px;overflow-wrap:anywhere}
+.restored-faults .f-ticker>div{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.restored-faults .f-quiet-status,.restored-faults .f-fault-stage{animation:none}
+.restored-faults .s-mode{font-size:11px}
+@media(max-width:1100px){.restored-faults{height:auto;min-height:100%;grid-template-rows:auto auto minmax(400px,1fr) auto}.restored-faults .rf-directory{position:relative;left:0;bottom:0;grid-column:1/-1}.restored-faults .rf-directory>div{max-width:85vw}.restored-faults .f-detail{min-height:620px}.restored-faults .f-ticker{min-height:48px}.restored-faults #f-detail-deck{min-height:220px}}
+
+/* Calm brand framing remains present while state and unavailable values stay neutral. */
+.restored-faults .f-stats{background:linear-gradient(110deg,#10333d,#102239 70%,#0b192a);box-shadow:inset 0 2px 0 #269b9966,inset 0 0 0 1px #254e6570}
+.restored-faults .f-stat>span{color:#a4cad0}
+.restored-faults .f-stat>strong:not(.high):not(.med):not(.good){color:#a6b8c6}
+.restored-faults .f-coverage>div:first-child strong{color:#36dfc0}
+.restored-faults .f-quiet-stage{background:radial-gradient(ellipse at 50% 50%,#0e3e4838,transparent 65%);border-top:1px solid #22516466}
+.restored-faults .f-quiet-status h2{color:#b1cfd4}
+.restored-faults .f-quiet-status p{color:#87a4b3}
+.restored-faults .f-ticker{background:linear-gradient(90deg,#103039,#0b2032);box-shadow:inset 3px 0 0 #278b83}
+.restored-faults .rf-directory summary{color:#7bcfc6}
+.restored-faults .rf-directory button{border-color:#30647a;background:linear-gradient(110deg,#123741,#13293e)}
+.restored-faults .rf-neutral{border-color:#376277;background:linear-gradient(115deg,#13323d,#102137);box-shadow:inset 0 1px 0 #5fafbd40}
+.restored-faults .rf-neutral .f-resource-object{color:#9cd7de}
+.restored-faults .f-detail-foot a{color:#72d8ca}

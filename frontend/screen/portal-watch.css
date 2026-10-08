@@ -1,0 +1,12 @@
+#critical-watch,.portal-nav button,#scene-controls button,.portal-actions button,.portal-actions a{font-size:13px}
+.portal-bar{min-height:62px}
+.scene-label,.demo-label,#countdown{font-size:12px}
+#critical-watch{display:flex;align-items:center;gap:7px;border-color:#173347;color:#9fb2bd}
+#critical-watch i{width:6px;height:6px;border-radius:50%;background:currentColor;box-shadow:0 0 9px currentColor}
+#critical-watch b{font-size:12px;font-weight:600;color:currentColor}
+#critical-watch.good{color:#00d9b0}
+#critical-watch.med{color:#ffad33}
+#critical-watch.high{color:#ff696b}
+@media(max-width:1540px){#critical-watch span{display:none}}
+@media(max-width:1180px){#critical-watch{order:2}.portal-actions{order:3}}
+@media(max-width:650px){#critical-watch{display:none}}

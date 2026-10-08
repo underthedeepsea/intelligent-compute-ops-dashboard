@@ -1,0 +1,9 @@
+**
+!requirements.lock
+!backend/
+!backend/**
+!deploy/
+!deploy/entrypoint.sh
+**/__pycache__/
+**/*.pyc
+**/*.sqlite3

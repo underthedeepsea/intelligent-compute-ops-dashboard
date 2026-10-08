@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Proposed read-only extension; absent baseline",
+  "type": "object",
+  "required": [
+    "provenance"
+  ],
+  "properties": {
+    "provenance": {
+      "type": "object",
+      "required": [
+        "source",
+        "sample_id",
+        "ingested_at"
+      ],
+      "properties": {
+        "source": {
+          "type": "string"
+        },
+        "sample_id": {
+          "type": "string"
+        },
+        "ingested_at": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

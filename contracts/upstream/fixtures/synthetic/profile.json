@@ -1,0 +1,61 @@
+{
+  "snapshot_id": "synthetic-only-001",
+  "engine": {
+    "engine_id": "synthetic-engine",
+    "engine_type": "vllm",
+    "model_name": "synthetic-model"
+  },
+  "window": {
+    "start": "2026-09-26T00:00:00Z",
+    "end": "2026-09-26T00:01:00Z"
+  },
+  "status": "NORMAL",
+  "evaluation_status": "NORMAL",
+  "freshness": {
+    "state": "FRESH",
+    "max_age_seconds": 300
+  },
+  "plugin": {
+    "id": "inference-performance",
+    "version": "1.0.0"
+  },
+  "quality": {
+    "state": "READY"
+  },
+  "current_metrics": {
+    "ttft": {
+      "avg_ms": 1,
+      "p90_ms": 1,
+      "p95_ms": 1,
+      "p99_ms": 1,
+      "e2e_ratio": 0.5
+    },
+    "tpot": {
+      "avg_ms": 1,
+      "p90_ms": 1,
+      "p95_ms": 1,
+      "p99_ms": 1
+    },
+    "e2e": {
+      "avg_ms": 1,
+      "p90_ms": 1,
+      "p95_ms": 1,
+      "p99_ms": 1
+    },
+    "traffic": {
+      "qps": 1,
+      "qpm": 1
+    },
+    "throughput": {
+      "generation_tps": 1,
+      "prompt_tps": 1
+    },
+    "cache": {
+      "kv_cache_hit_rate": 0.5
+    },
+    "requests": {
+      "running": 1,
+      "waiting": 1
+    }
+  }
+}

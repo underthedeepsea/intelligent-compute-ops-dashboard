@@ -1,0 +1,2 @@
+﻿resource_code,resource_name,resource_type,host_id,gpu_uuid,sampled_at,utilization_ratio,temperature_celsius,memory_used_bytes,memory_total_bytes,cpu_busy_ratio,memory_available_bytes
+example-gpu,示例 GPU,GPU_POOL,example-host,example-gpu-uuid,2026-09-01T08:00:00Z,0.72,64,51539607552,85899345920,,

@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "view_revision",
+    "metadata_revision",
+    "telemetry_revision",
+    "served_at",
+    "data"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "view_revision": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "data": {
+      "type": "object",
+      "required": [
+        "kind",
+        "capabilities",
+        "coverage",
+        "data_state",
+        "items",
+        "summary",
+        "source_window"
+      ],
+      "properties": {
+        "items": {
+          "type": "array"
+        },
+        "data_state": {
+          "enum": [
+            "MISSING",
+            "UNMAPPED",
+            "UNVERIFIED",
+            "FRESH",
+            "STALE",
+            "INVALID"
+          ]
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,201 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Inspection profile baseline source contract",
+  "type": "object",
+  "required": [
+    "snapshot_id",
+    "engine",
+    "window",
+    "status",
+    "evaluation_status",
+    "freshness",
+    "plugin",
+    "quality",
+    "current_metrics"
+  ],
+  "properties": {
+    "snapshot_id": {
+      "type": "string"
+    },
+    "engine": {
+      "type": "object",
+      "required": [
+        "engine_id",
+        "engine_type",
+        "model_name"
+      ]
+    },
+    "window": {
+      "type": "object",
+      "required": [
+        "start",
+        "end"
+      ]
+    },
+    "current_metrics": {
+      "type": "object",
+      "required": [
+        "ttft",
+        "tpot",
+        "e2e",
+        "traffic",
+        "throughput",
+        "cache",
+        "requests"
+      ],
+      "properties": {
+        "ttft": {
+          "type": "object",
+          "required": [
+            "avg_ms",
+            "p90_ms",
+            "p95_ms",
+            "p99_ms",
+            "e2e_ratio"
+          ],
+          "properties": {
+            "avg_ms": {
+              "type": "number",
+              "minimum": 0
+            },
+            "p90_ms": {
+              "type": "number",
+              "minimum": 0
+            },
+            "p95_ms": {
+              "type": "number",
+              "minimum": 0
+            },
+            "p99_ms": {
+              "type": "number",
+              "minimum": 0
+            },
+            "e2e_ratio": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          }
+        },
+        "tpot": {
+          "type": "object",
+          "required": [
+            "avg_ms",
+            "p90_ms",
+            "p95_ms",
+            "p99_ms"
+          ],
+          "properties": {
+            "avg_ms": {
+              "type": "number",
+              "minimum": 0
+            },
+            "p90_ms": {
+              "type": "number",
+              "minimum": 0
+            },
+            "p95_ms": {
+              "type": "number",
+              "minimum": 0
+            },
+            "p99_ms": {
+              "type": "number",
+              "minimum": 0
+            }
+          }
+        },
+        "e2e": {
+          "type": "object",
+          "required": [
+            "avg_ms",
+            "p90_ms",
+            "p95_ms",
+            "p99_ms"
+          ],
+          "properties": {
+            "avg_ms": {
+              "type": "number",
+              "minimum": 0
+            },
+            "p90_ms": {
+              "type": "number",
+              "minimum": 0
+            },
+            "p95_ms": {
+              "type": "number",
+              "minimum": 0
+            },
+            "p99_ms": {
+              "type": "number",
+              "minimum": 0
+            }
+          }
+        },
+        "traffic": {
+          "type": "object",
+          "required": [
+            "qps",
+            "qpm"
+          ],
+          "properties": {
+            "qps": {
+              "type": "number",
+              "minimum": 0
+            },
+            "qpm": {
+              "type": "number",
+              "minimum": 0
+            }
+          }
+        },
+        "throughput": {
+          "type": "object",
+          "required": [
+            "generation_tps",
+            "prompt_tps"
+          ],
+          "properties": {
+            "generation_tps": {
+              "type": "number",
+              "minimum": 0
+            },
+            "prompt_tps": {
+              "type": "number",
+              "minimum": 0
+            }
+          }
+        },
+        "cache": {
+          "type": "object",
+          "required": [
+            "kv_cache_hit_rate"
+          ],
+          "properties": {
+            "kv_cache_hit_rate": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          }
+        },
+        "requests": {
+          "type": "object",
+          "required": [
+            "running",
+            "waiting"
+          ],
+          "properties": {
+            "running": {
+              "type": "number",
+              "minimum": 0
+            },
+            "waiting": {
+              "type": "number",
+              "minimum": 0
+            }
+          }
+        }
+      }
+    }
+  }
+}

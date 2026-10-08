@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AI Gateway Console · 演示环境</title>
+  <link rel="stylesheet" href="styles.css?v=1">
+  <link rel="stylesheet" href="directory.css?v=2">
+  <link rel="stylesheet" href="overview.css?v=1">
+  <link rel="stylesheet" href="console-shell.css?v=3">
+  <link rel="stylesheet" href="entry-management.css?v=4">
+  <script src="directory-core.js?v=10" defer></script>
+  <script src="record-editor.js?v=4" defer></script>
+  <script src="directory.js?v=14" defer></script>
+  <script src="app.js?v=12" defer></script>
+</head>
+<body>
+  <header class="topbar console-topbar"><a class="brand" href="?mode=directory"><span class="brand-mark">AG</span><span>AI Gateway Console<small>Access · Catalog · Runtime Topology</small></span></a><div class="console-top-actions"><span class="console-environment"><i></i>演示环境</span><a class="button small" href="http://127.0.0.1:8767/screen/" target="_blank" rel="noopener" title="在新标签页打开五屏观测">五屏观测 ↗</a><button type="button" class="button small" id="refresh-directory">刷新目录</button></div></header>
+  <div class="console-shell">
+    <aside class="console-sidebar" aria-label="控制台导航">
+      <div class="console-nav-group">Gateway</div>
+      <nav class="console-nav" aria-label="Gateway">
+        <button type="button" class="console-nav-item" data-console-view="overview"><span></span>网关总览</button>
+        <button type="button" class="console-nav-item" data-console-view="resources"><span></span>资源与关系目录</button>
+        <button type="button" class="console-nav-item" data-console-view="keys"><span></span>API Key 目录</button>
+      </nav>
+      <div class="console-nav-group gap">Catalog</div>
+      <nav class="console-nav" aria-label="资源录入">
+        <button type="button" class="console-nav-item" data-entry-open><span></span>资源录入</button>
+      </nav>
+      <div class="console-sidebar-note"><b>统一资源目录</b><p>团队、业务、模型、服务与授权关系集中登记。</p><small>本地演示 · 数据保存在此浏览器<br>执行端未连接</small></div>
+    </aside>
+    <div class="console-content">
+      <div class="console-context"><span>Gateway</span><span class="context-divider">/</span><span id="console-location">网关总览</span><span class="console-context-note">目录配置</span></div>
+  <section id="entry-header" class="entry-header" hidden>
+    <div class="entry-heading"><div><h1>资源录入</h1><p>选择录入方式，保存后可在资源目录中查看和修改。</p></div><button type="button" class="button" data-entry-records>查看已录入记录</button></div>
+    <div class="entry-tabs" role="tablist" aria-label="录入方式"><button type="button" role="tab" id="tab-direct" data-entry-method="wizard" aria-controls="wizard">直接录入</button><button type="button" role="tab" id="tab-batch" data-entry-method="batch" aria-controls="manager">批量导入</button></div>
+    <div id="entry-session-tools" class="entry-session-tools"><span id="entry-session-label"></span><div><select id="entry-history" aria-label="历史草稿与记录"><option value="">历史草稿与记录</option></select><button type="button" class="button small" id="reset">新建录入</button></div></div>
+  </section>
+  <div class="layout" id="wizard" role="tabpanel" aria-labelledby="tab-direct">
+    <aside class="steps-panel"><div class="task-title">建立完整服务关系</div><p class="muted">已有资源直接复用。新增信息随步骤填写。</p><nav id="steps" aria-label="录入步骤"></nav><div class="side-note">本 Demo 使用独立示例目录，保存仅在当前浏览器中，不部署服务。</div></aside>
+    <main id="main"><div class="heading"><div><p id="position" class="eyebrow"></p><h1 id="title" tabindex="-1"></h1><p id="subtitle" class="muted"></p></div><button id="example" class="button small" type="button">填入完整示例</button></div><div id="notice" role="status" class="notice" hidden></div><form id="flow-form" novalidate><div id="form-content"></div><footer class="actions"><div><span id="draft-state">尚未保存草稿</span><small>演示环境 · 不写入统一目录</small></div><div class="action-buttons"><button type="button" id="prev" class="button">上一步</button><button type="button" id="save-draft" class="button">保存草稿</button><button type="submit" id="next" class="button primary">保存草稿并继续 →</button></div></footer></form></main>
+    <aside class="summary-panel" aria-label="当前关系摘要"><h2>当前服务关系</h2><p class="muted">随录入更新，最后统一核对。</p><div id="summary"></div><div class="relationship-note"><strong>两种关系分别登记</strong><p>业务 → 服务：配置的依赖</p><p>Key → 模型：配置的授权</p><small>两者均不证明真实调用或执行端生效。</small></div></aside>
+  </div>
+  <main id="manager" class="manager" hidden></main>
+  <main id="record-editor" class="manager record-editor" hidden></main>
+    </div>
+  </div>
+  <dialog id="record-dialog" aria-label="资源完整字段"></dialog>
+</body>
+</html>

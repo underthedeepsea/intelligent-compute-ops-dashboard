@@ -1,0 +1,45 @@
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: control_plane
+      POSTGRES_USER: control_plane
+      POSTGRES_PASSWORD: ${PGPASSWORD:?set PGPASSWORD}
+    volumes: ["pgdata:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U control_plane -d control_plane"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    restart: unless-stopped
+  api:
+    build: {context: .., dockerfile: deploy/Dockerfile}
+    env_file: .env
+    environment: {PGHOST: db, PGDATABASE: control_plane, PGUSER: control_plane}
+    volumes: ["static:/app/backend/staticfiles"]
+    depends_on: {db: {condition: service_healthy}}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/readyz')"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+  worker:
+    build: {context: .., dockerfile: deploy/Dockerfile}
+    env_file: .env
+    environment: {PGHOST: db, PGDATABASE: control_plane, PGUSER: control_plane}
+    command: ["python", "manage.py", "poll_inspection"]
+    depends_on: {db: {condition: service_healthy}}
+    restart: unless-stopped
+  web:
+    image: nginx:1.28-alpine
+    ports: ["127.0.0.1:8088:8080"]
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ../frontend:/usr/share/nginx/html:ro
+      - static:/static:ro
+    depends_on: [api]
+    restart: unless-stopped
+volumes:
+  pgdata:
+  static:

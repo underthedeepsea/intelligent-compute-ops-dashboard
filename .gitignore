@@ -1,0 +1,20 @@
+# Local runtime and secrets
+.venv/
+__pycache__/
+*.py[cod]
+*.sqlite3*
+.env
+.env.*
+!.env.example
+node_modules/
+backend/staticfiles/
+.DS_Store
+# Local evidence, sessions and browser outputs
+.codex/
+.agents/
+evidence/
+worklogs/
+*.log
+*.pid
+playwright-report/
+test-results/

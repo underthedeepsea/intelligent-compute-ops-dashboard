@@ -46,20 +46,27 @@ class PDGroup(Entity):
     service = models.ForeignKey(InferenceService,on_delete=models.PROTECT)
     def clean(self):
         super().clean()
-        if self.service_id and self.service.deployment_mode != 'SPLIT_PD': raise ValidationError('PD 仅属于 SPLIT_PD 服务')
+        if self.enabled and self.service_id and self.service.deployment_mode != 'SPLIT_PD': raise ValidationError('PD 仅属于 SPLIT_PD 服务')
 class Endpoint(Entity):
     service = models.ForeignKey(InferenceService,on_delete=models.PROTECT)
     cluster = models.ForeignKey(KubernetesCluster,on_delete=models.PROTECT)
     pd_group = models.ForeignKey(PDGroup,null=True,blank=True,on_delete=models.PROTECT)
     role = models.CharField(max_length=16,choices=[(x,x) for x in ['ROUTER','PREFILL','DECODE','COMBINED']])
     address_ref = models.CharField(max_length=160,blank=True)
+    namespace = models.CharField(max_length=120,blank=True)
+    workload_kind = models.CharField(max_length=16,choices=[('LWS','LWS'),('Deployment','Deployment')],blank=True)
+    workload_ref = models.CharField(max_length=160,blank=True)
+    configured_nodes = models.JSONField(default=list,blank=True)
     def clean(self):
         super().clean()
+        if not isinstance(self.configured_nodes,list) or len(self.configured_nodes)>32 or any(not isinstance(x,str) or not x.strip() or len(x)>160 for x in self.configured_nodes) or len(set(self.configured_nodes))!=len(self.configured_nodes):
+            raise ValidationError({'configured_nodes':'配置节点必须为最多32个不同非空名称'})
         if not self.service_id: return
-        if self.service.deployment_mode == 'COMBINED':
+        if self.enabled and self.service.deployment_mode == 'COMBINED':
             if self.pd_group_id or self.role != 'COMBINED': raise ValidationError('COMBINED 不可绑定 PD 或阶段角色')
-        elif not self.pd_group_id or self.role == 'COMBINED': raise ValidationError('SPLIT_PD 必须绑定 PD 与阶段角色')
+        elif self.enabled and (not self.pd_group_id or self.role == 'COMBINED'): raise ValidationError('SPLIT_PD 必须绑定 PD 与阶段角色')
         if self.pd_group_id and self.pd_group.service_id != self.service_id: raise ValidationError('PD 与 Endpoint 必须属于同一服务')
+        if self.enabled and self.pd_group_id and not self.pd_group.enabled: raise ValidationError('活跃 Endpoint 不可绑定退休 PD 组')
 class ApiKeyRef(Entity):
     external_key_ref = models.CharField(max_length=160,unique=True)
     masked_label = models.CharField(max_length=80)

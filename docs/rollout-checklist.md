@@ -2,7 +2,15 @@
 
 当前仅准备本地实现与验证。未获真实巡检地址、身份和凭证，M0/M5 真实验收未通过；此清单不代表批准上线，未勾选项不得以页面可打开替代。
 
-## 发布前门禁
+## 当前部署合同
+
+当前版本按 [HTTP部署说明](../deploy/README.md#纯-httppod-直连无-ingress) 部署：HTTP Web Pod IP:8080，同源API，NAS PV/PVC中的SQLite，单副本、单写者、串行备份/迁移；无需Ingress或本项目账号体系。应用仍需随机Django应用密钥、Host和HTTP origin，保留CSRF、版本与关联校验。巡检尚未接通时通过手动CSV快照演示，默认不启动取数worker。
+
+从旧版升级先停止所有写者，使用旧版本镜像验证并备份数据库，唯一迁移Job完成并退出后恢复匹配的API/Web。不得删库解决身份提示，不执行已退休的bootstrap_access。实际操作与生产清单以当前deploy/README.md和docs/deployment-production-checklist.md为准。
+
+下面保留最初巡检集成的历史检查与证据。其PostgreSQL、HTTPS、角色和账号步骤属于旧设计，当前部署不再采用；来源验证、脱敏、原始指标及真实联调缺口仍适用。
+
+## 历史发布前门禁
 
 - [ ] 冻结发布源码、依赖锁、数据库迁移、API schema 和静态资源版本；保存执行命令、退出码及证据路径。
 - [ ] 使用独立 PostgreSQL database/owner；禁止共享巡检表、跨库查询或导入巡检 ORM。SQLite 仅用于显式隔离本地开发。

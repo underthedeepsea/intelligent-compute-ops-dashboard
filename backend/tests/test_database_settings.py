@@ -15,7 +15,7 @@ import django
 django.setup()
 result = {
     'local': settings.LOCAL, 'debug': settings.DEBUG,
-    'passwordless': settings.PASSWORDLESS_LOCAL,
+    'passwordless': hasattr(settings,'PASSWORDLESS_LOCAL'),
     'demo_import': settings.ALLOW_DEMO_IMPORT,
     'session_secure': settings.SESSION_COOKIE_SECURE,
     'csrf_secure': settings.CSRF_COOKIE_SECURE,
@@ -83,12 +83,10 @@ class DatabaseSettingsTests(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn('DATABASE_ENGINE must be sqlite or postgresql', result.stderr)
 
-    def test_production_sqlite_cannot_enable_passwordless(self):
-        result = self.probe({'DATABASE_ENGINE': 'sqlite', 'CONTROL_PASSWORDLESS_LOCAL': '1',
-                             'CONTROL_PASSWORDLESS_USERNAME': 'admin',
-                             'CONTROL_PASSWORDLESS_ENVIRONMENT': 'prod'})
-        self.assertNotEqual(result.returncode, 0)
-        self.assertIn('Local passwordless requires CONTROL_LOCAL=1', result.stderr)
+    def test_obsolete_identity_flags_have_no_effect(self):
+        result=self.probe({'DATABASE_ENGINE':'sqlite','CONTROL_TRANSPORT':'http','CONTROL_PASSWORDLESS_LOCAL':'1'})
+        self.assertEqual(result.returncode,0,result.stderr)
+        self.assertFalse(json.loads(result.stdout)['passwordless'])
 
     def test_production_sqlite_requires_secret(self):
         result = self.probe({'DATABASE_ENGINE': 'sqlite', 'DJANGO_SECRET_KEY': ''})

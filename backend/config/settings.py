@@ -10,12 +10,12 @@ if not SECRET_KEY:
     raise RuntimeError('Set DJANGO_SECRET_KEY; CONTROL_LOCAL=1 is only for isolated development')
 DEBUG = LOCAL
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '127.0.0.1,localhost').split(',')
-INSTALLED_APPS = ['django.contrib.admin','django.contrib.auth','django.contrib.contenttypes','django.contrib.sessions','django.contrib.messages','django.contrib.staticfiles','control']
-MIDDLEWARE = ['django.middleware.security.SecurityMiddleware','django.contrib.sessions.middleware.SessionMiddleware','django.middleware.common.CommonMiddleware','django.middleware.csrf.CsrfViewMiddleware','django.contrib.auth.middleware.AuthenticationMiddleware','control.local_access.LocalSessionGuard','django.contrib.messages.middleware.MessageMiddleware','django.middleware.clickjacking.XFrameOptionsMiddleware']
+INSTALLED_APPS = ['config.legacy_admin.LegacyAdminConfig','django.contrib.auth','django.contrib.contenttypes','django.contrib.sessions','django.contrib.messages','django.contrib.staticfiles','control']
+MIDDLEWARE = ['django.middleware.security.SecurityMiddleware','django.middleware.common.CommonMiddleware','django.middleware.csrf.CsrfViewMiddleware','django.middleware.clickjacking.XFrameOptionsMiddleware']
 ROOT_URLCONF = 'config.urls'
 TEMPLATES = [{'BACKEND':'django.template.backends.django.DjangoTemplates','APP_DIRS':True,'OPTIONS':{'context_processors':['django.template.context_processors.request','django.contrib.auth.context_processors.auth','django.contrib.messages.context_processors.messages']}}]
 WSGI_APPLICATION = 'config.wsgi.application'
-# Database choice does not enable local development or passwordless access.
+# Database choice does not enable local development.
 DATABASE_ENGINE = os.environ.get('DATABASE_ENGINE', 'sqlite' if LOCAL else 'postgresql')
 if DATABASE_ENGINE == 'sqlite':
     DATABASES = {'default': {
@@ -52,11 +52,3 @@ CSRF_TRUSTED_ORIGINS = [x for x in os.environ.get('CSRF_TRUSTED_ORIGINS','').spl
 # Direct HTTP has no trusted TLS terminator; ignore client-supplied protocol headers.
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https') if CONTROL_TRANSPORT == 'https' else None
 
-# Passwordless is an explicitly enabled, direct-loopback development capability.
-PASSWORDLESS_LOCAL = os.environ.get('CONTROL_PASSWORDLESS_LOCAL') == '1'
-PASSWORDLESS_USERNAME = os.environ.get('CONTROL_PASSWORDLESS_USERNAME', '')
-PASSWORDLESS_ENVIRONMENT = os.environ.get('CONTROL_PASSWORDLESS_ENVIRONMENT', '')
-if PASSWORDLESS_LOCAL and (not LOCAL or not PASSWORDLESS_USERNAME or not PASSWORDLESS_ENVIRONMENT):
-    raise RuntimeError('Local passwordless requires CONTROL_LOCAL=1 and explicit username/environment')
-if PASSWORDLESS_LOCAL and (len(PASSWORDLESS_USERNAME)>150 or len(PASSWORDLESS_ENVIRONMENT)>80):
-    raise RuntimeError('Local passwordless identity configuration is too long')

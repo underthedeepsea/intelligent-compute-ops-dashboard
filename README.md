@@ -1,6 +1,6 @@
 # 智算运维大屏
 
-**Intelligent Compute Ops Dashboard**：面向智算集群的五屏观测界面、AI Gateway 资源控制台和独立录入流程原型。
+**Intelligent Compute Ops Dashboard**：面向智算集群的五屏观测界面、AI Gateway 资源控制台、整项推理服务录入与历史独立原型。
 
 静态 HTML / CSS / JavaScript 前端，Django 后端；本地使用 SQLite，K8s 默认通过 NAS PV/PVC 持久化 SQLite，Compose 保留 PostgreSQL。无需前端构建步骤。
 
@@ -33,26 +33,28 @@ python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install -r requirements.lock
 export CONTROL_LOCAL=1
-export CONTROL_PASSWORDLESS_LOCAL=1
-export CONTROL_PASSWORDLESS_USERNAME=local-preview
-export CONTROL_PASSWORDLESS_ENVIRONMENT=local
 python backend/manage.py migrate --noinput
-python backend/manage.py bootstrap_local_access
 python backend/manage.py runserver 127.0.0.1:8767 --noreload
 ```
 
 - 五屏入口：<http://127.0.0.1:8767/screen/>
 - 控制台：<http://127.0.0.1:8767/gateway/>
 
-初始数据库为空。可在另一个已启用同一虚拟环境的终端执行以下命令，生成明确标记的离线演示数据：
+初始数据库为空，直接在控制台「资源录入」录入完整服务，或在「监控数据管理」录入监控配置与 CSV 快照。无需创建用户、填写账号密码或初始化角色。
 
-```bash
-python demo/local_preview/seed.py
-```
+当前项目不提供账号、登录、角色或环境授权体系；可直接查看和修改已登记数据，后续生产系统接入另行处理。旧身份表和历史审计仅为数据库兼容保留。原 `demo/local_preview/` 身份初始化脚本作为历史参考保留，不作为当前启动步骤。当前访问契约见 [直接访问设计](docs/direct-access-design.md)。
 
-此脚本只用于本机演示数据库，生成前自动备份；详见 [演示数据说明](demo/local_preview/README.md)。它不连接实际巡检平台，不代表真实监控。
+## 完整推理服务录入与修改
 
-本机免密访问仅供 loopback 开发预览，专用账号不是超级用户。禁止将该模式经隧道或公网代理公开。生产部署使用独立会话、数据库及真实权限配置，参见 [部署说明](deploy/README.md)。
+打开 `/gateway/?view=catalog`。侧栏只有一个「资源录入」入口，页内区分「直接录入」「批量导入」「已录入服务目录」，数据保存到后台数据库。
+
+1. 填写推理服务名与PRD/DR/STG/DEV环境；团队、业务、模型、K8s集群可选择已有资源或在同页新建。
+2. 选择合并部署或P/D分离，添加P、D及可选Router实例；每个实例填写Namespace、LWS/Deployment、工作负载名、服务地址和多个配置Node。
+3. 一次保存整个服务。UUID与内部代码自动生成；不录入动态Pod名称、Pod UID、Node UID或采样时间。配置Node只表示部署登记，不会被当作运行观测。
+4. 在已录入服务目录搜索并整项编辑，支持多个P/D组；移除已有实例会退休原记录并保留历史观测。可查看该服务关联图及导出完整JSON。
+5. 批量录入下载服务CSV模板，一行一个实例，同service_alias组成一个服务；校验、修正后一次应用全批。批量入口用于创建，已有服务修改走目录。
+
+网关总览保留原完整映射表，并显示实际登记关联图；`/gateway/?view=mapping` 可直接打开图形映射。服务配置CSV与监控指标CSV入口分开，完整JSON导出与配置复制CSV用途不同。操作说明见 [资源录入](docs/catalog-entry.md)。
 
 ## 手动监控数据导入
 
@@ -63,7 +65,7 @@ python demo/local_preview/seed.py
 3. 填写后上传、校验预览、确认导入。每次替换该集群同一类快照，另一类独立保留。
 4. 返回五屏查看 CSV 快照及原始采样时间。
 
-CSV 数值不表示实时巡检或当前健康；系统对象 UUID 无需手工填写。详细字段、单位、权限和错误恢复步骤见 [监控数据说明](docs/monitoring.md)。
+CSV 数值不表示实时巡检或当前健康；系统对象 UUID 无需手工填写。详细字段、单位和错误恢复步骤见 [监控数据说明](docs/monitoring.md)。
 
 ## 独立录入原型（实验功能）
 
@@ -77,11 +79,19 @@ python3 -m http.server 8789 --bind 127.0.0.1 --directory prototypes/gateway-entr
 
 ## Docker 与 Kubernetes 部署
 
-API/Web 分别构建为独立镜像，包含前端、管理后台静态资源和 CSV 模板。镜像构建命令、NAS 配置与完整安装顺序见 [中文部署说明](deploy/README.md)。
+API/Web 分别构建为独立镜像，包含前端和 CSV 模板。镜像构建命令、NAS 配置与完整安装顺序见 [中文部署说明](deploy/README.md)。
 
-K8s 默认使用 NFS NAS 的 PV/PVC，将 SQLite 数据目录挂载到 `/data`。API 为单副本、一个 sync worker，采用 Recreate 升级，巡检 worker 默认不部署。迁移、管理账号创建、备份和恢复均须停止 API，等待 Pod 退出后串行维护。数据库选择不依赖开发开关；生产保留密码认证、角色/环境权限和CSRF校验。默认HTTPS；用户指定纯HTTP时使用 `deploy/k8s/http`，Cookie配置匹配HTTP，Web Pod入口为8080。
+推荐使用 **HTTP + Web Pod IP:8080 + NAS PV/PVC + SQLite**：`deploy/k8s/http`。无需 Ingress、HTTPS、管理员账号或密码 Secret。API 为单副本、一个 sync worker，采用 Recreate 升级；巡检 worker 默认不部署。迁移、命令行导入、备份和恢复须停止 API，等待所有写者退出后串行执行。保留 CSRF 同源请求校验、数据关联校验和版本冲突检查。
 
-使用前需替换 NAS 地址及导出目录、镜像仓库、域名与 Secret。NAS 目录需允许 UID/GID 10001 写入。DELETE 日志与 FULL 同步不能替代目标 NAS 的锁及持久性验收；本地配置验证不代表AMD64成品、真实K8s或NAS已通过验收。设计边界见 [Docker 与 NAS 设计](docs/docker-nas-design.md)。HTTP直连安装步骤见 [部署说明](deploy/README.md#纯-httppod-直连无-ingress)，现场准备项见 [生产清单](docs/deployment-production-checklist.md)。新增HTTP方案需构建0.3.0镜像；当前没有已上传的容器镜像，不能使用旧0.2.0 API镜像。
+生产仍需 Django 随机应用密钥、实际 Host/HTTP origin、NAS 地址/目录及镜像仓库；应用密钥用于框架签名，不是登录密码。NAS 目录需允许 UID/GID 10001 写入。DELETE/FULL 不能替代目标 NAS 的锁及持久性验收；本地测试不代表真实 K8s/NAS 或 AMD64 成品已验收。准备项见 [生产清单](docs/deployment-production-checklist.md)。
+
+### v0.2 / v0.3 的「尚未获得访问身份」提示
+
+旧版本的页面强制要求登录会话；v0.2 还固定使用 Secure Cookie，普通 HTTP 无法维持该会话。**v0.4.0 已取消项目内鉴权，不能靠配置旧镜像消除该提示。**
+
+从本仓库 v0.4.0 源码构建匹配的 Linux AMD64 API/Web 镜像，按 [升级步骤](deploy/README.md) 停止 API、备份原数据库、串行迁移（确认 `control.0006_endpoint_deployment_configuration` 为已应用），再启动同版本 API 和 Web。无需删除数据库、创建账号或执行 `bootstrap_access`。浏览器刷新后确认 `service-entry.js?v=service-entry-v2` 已加载，并检查 `/api/v1/session` 返回 `access_mode: "direct"`；该兼容路径只提供访问元数据和 CSRF，不建立登录会话。
+
+本次只发布源码、tag 和 release，未上传容器镜像。不要继续运行0.2.0/0.3.0镜像，也不要把本地 ARM 镜像用于 x86 服务器。
 
 ## 测试
 
@@ -96,11 +106,11 @@ CONTROL_LOCAL=1 python backend/manage.py test tests --verbosity 1
 ## 项目结构
 
 ```text
-backend/                 Django API、目录、权限、观测投影与测试
+backend/                 Django API、目录、观测投影与测试
 frontend/screen/         五屏与门户
 frontend/gateway/        AI Gateway 控制台
 prototypes/gateway-entry-flow/  浏览器本地录入原型
-demo/local_preview/      离线演示数据生成器
+demo/local_preview/      历史离线演示参考
 contracts/               接口与来源契约
 templates/               CSV 模板
 deploy/                  镜像构建 / Compose / K8s NAS PV/PVC 部署配置

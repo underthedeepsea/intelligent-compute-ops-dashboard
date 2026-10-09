@@ -11,7 +11,7 @@ from control.catalog import APIError,save
 
 class MonitoringTests(TransactionTestCase):
     def setUp(self):
-        self.user=User.objects.create_user('admin',password='password');self.user.groups.add(Group.objects.create(name='catalog_admin'));m.AccessScope.objects.create(user=self.user,environment_code='prod');self.client.force_login(self.user)
+        self.user='anonymous'
     def csv(self,kind,rows):
         out=io.StringIO();w=csv.DictWriter(out,fieldnames=COLUMNS[kind]);w.writeheader();w.writerows(rows);return out.getvalue()
     def config(self,**fields):
@@ -67,10 +67,9 @@ class MonitoringTests(TransactionTestCase):
         self.assertEqual(self.client.get('/api/v1/monitoring/clusters').status_code,200)
         for kind in COLUMNS:
             response=self.client.get('/api/v1/monitoring/templates/'+kind+'.csv');self.assertEqual(response.status_code,200);self.assertEqual(next(csv.reader(io.StringIO(response.content.decode('utf-8-sig')))),COLUMNS[kind])
-        self.user.groups.clear();self.user.groups.add(Group.objects.create(name='operator'))
         self.assertEqual(self.client.get('/api/v1/monitoring/clusters').status_code,200)
-        self.assertEqual(self.client.post('/api/v1/monitoring/imports/validate',data='{}',content_type='application/json').status_code,403)
-        self.assertEqual(self.client.patch('/api/v1/monitoring/clusters/'+str(c.pk)+'/source',data=json.dumps({'expected_version':c.version,'source':'CSV'}),content_type='application/json').status_code,403)
+        self.assertEqual(self.client.post('/api/v1/monitoring/imports/validate',data='{}',content_type='application/json').status_code,400)
+        self.assertEqual(self.client.patch('/api/v1/monitoring/clusters/'+str(c.pk)+'/source',data=json.dumps({'expected_version':c.version,'source':'CSV'}),content_type='application/json').status_code,200)
 
     @override_settings(PROVIDER_URLS=['https://inspection.test'])
     def test_worker_late_error_and_unassigned_hardware(self):

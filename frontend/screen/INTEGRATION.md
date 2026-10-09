@@ -1,6 +1,6 @@
 # 原布局统一接入合同
 
-本次沿用根目录原五屏的 DOM/class、布局比例、主题、字体与面板空间。原目录只作参考，不加载原 demo 脚本，不连接 demo_server，不在错误时回退固定数据。唯一数据入口是同源 `/api/v1/`；免密身份由原 `ControlAPI.ensureSession()` 完成。
+本次沿用根目录原五屏的 DOM/class、布局比例、主题、字体与面板空间。原目录只作参考，不加载原 demo 脚本，不连接 demo_server，不在错误时回退固定数据。唯一数据入口是同源 `/api/v1/`；当前由 `ControlAPI.ensureAccess()` 读取直接访问元数据与 CSRF token，不建立登录会话。
 
 ## 启动与共享接口
 
@@ -22,7 +22,9 @@ ctx提供 `e`、`m`、`ageState`、`endpointState`、`stateLabel`、`tag`、`sou
 
 portal保留原1920×1080 iframe整体缩放，按stage宽高取较小缩放比。手动展示为默认，开启轮播后每屏90秒；隐藏页面冻结剩余时间。子屏跨屏链接保留对象参数，同步顶部按钮、地址及独立打开链接。无尚未实现的场景切换入口。
 
-所有HTML的CSS/JS标记为restore-original-1。未新增构建框架、外部CDN或后端写入API。
+历史首版HTML的CSS/JS标记为restore-original-1；当前以各HTML中的资源版本为准。未新增构建框架或外部CDN。大屏只读取后端，目录写入在Gateway进行。
+
+## 历史指标接入记录
 
 2026-09-26 已批准指标接入：01五个CPU/GPU/内存/显存/温度槽位接单设备，GPU标题为SINGLE GPU，多设备每12个可见秒轮播，来源和逐点过期仍独立老化。02底部四槽换E2E P99、TTFT P95、TTFT占总延迟比例、TPOT P95，仍按所选单Endpoint；原延迟条保留占位但隐藏，不相加。CSS、卡数和布局不变，01/02相关JS的HTML缓存标记更新为approved-metrics-1。详见 `../../docs/approved-metrics-integration.md`；此前“硬件未接入”仅适用于本次五槽之外与03异常定位。
 

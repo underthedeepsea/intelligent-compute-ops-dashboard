@@ -19,8 +19,8 @@ spec:
         seccompProfile: {type: RuntimeDefault}
       containers:
         - name: migrate
-          image: control-api:0.2.0
-          args: [/bin/sh, -ec, "python manage.py migrate --noinput && python manage.py bootstrap_access"]
+          image: control-api:0.4.0
+          args: [/bin/sh, -ec, "python manage.py migrate --noinput"]
           envFrom:
             - configMapRef: {name: control-config}
             - secretRef: {name: control-secrets}

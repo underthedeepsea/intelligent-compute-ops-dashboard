@@ -8,8 +8,8 @@ components:
 images:
   # Base already transforms these image names, so override the resulting names.
   - name: registry.example.invalid/control/control-api
-    newTag: 0.3.0
+    newTag: 0.4.0
   - name: registry.example.invalid/control/control-web
-    newTag: 0.3.0
+    newTag: 0.4.0
 patches:
   - path: web-patch.yaml

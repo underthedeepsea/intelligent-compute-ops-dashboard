@@ -8,3 +8,8 @@
 /* A newly rendered scene must remain visible when motion is disabled. */
 .motion-paused *, .motion-paused *:before, .motion-paused *:after{animation:none!important;transition:none!important}
 .motion-paused .spark .spark-line{stroke-dashoffset:0}
+
+/* Portal supplies navigation; each screen keeps its own content title. */
+body.screen-embedded #app-header{display:none!important}
+body.screen-embedded #app{padding-top:0!important}
+.portal-hidden *, .portal-hidden *:before, .portal-hidden *:after{animation-play-state:paused!important}

@@ -87,7 +87,6 @@ def digest(value):return hashlib.sha256(json.dumps(value,sort_keys=True,ensure_a
 
 def config_plan(user,rows,cluster):
     first=rows[0][1];env=first['environment_code'];code=first['cluster_code']
-    if not user.is_superuser and env not in environments(user):raise APIError('FORBIDDEN','无此环境权限',403)
     if not code or not first['cluster_name']:invalid(rows[0][0],'cluster_code','集群编码和名称必填')
     if cluster and (cluster.code!=code or cluster.environment_code!=env):raise APIError('WRONG_CLUSTER','CSV 与目标集群不一致')
     cache={};operations=[];definitions={};seen=set()

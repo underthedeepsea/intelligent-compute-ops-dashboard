@@ -19,7 +19,7 @@ from .test_telemetry import TelemetryTests,fixture
 class ReviewRegressionTests(TestCase):
     def setUp(self):
         TelemetryTests.setUp(self)
-        self.user=User.objects.create_superuser('repair-root','repair@example.test','isolated-test-password')
+        self.user='anonymous'
     def captured(self):return m.EngineBinding.objects.select_related('provider','endpoint').get(pk=self.binding.pk)
     def profile(self,binding=None):
         raw=fixture(binding or self.binding)
@@ -147,7 +147,7 @@ class GenerationConcurrencyTests(TransactionTestCase):
         from threading import Event
         if connection.vendor!='postgresql':self.skipTest('PostgreSQL concurrent generation fence')
         TelemetryTests.setUp(self)
-        user=User.objects.create_superuser('generation-root','test@example.test','test-password')
+        user='anonymous'
         started=Event();resume=Event()
         class Reader:
             def __init__(self,p):pass

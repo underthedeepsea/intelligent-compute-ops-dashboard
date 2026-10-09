@@ -35,6 +35,8 @@ def save(model,user,payload,pk=None,origin=None):
         allowed={f.attname:f for f in model._meta.fields if f.editable and not f.primary_key}
         unknown=set(payload)-set(allowed)-({'expected_version','confirm_disable'} if pk else set())
         if unknown:raise APIError('UNKNOWN_FIELDS','不允许的字段',details={'fields':sorted(unknown)})
+        if not pk and 'code' not in payload:
+            obj.code=model._meta.model_name+'-'+str(obj.pk)
         for key,value in payload.items():
             if key not in allowed:continue
             f=allowed[key]
@@ -42,7 +44,6 @@ def save(model,user,payload,pk=None,origin=None):
                 related=find(f.remote_field.model,user,value)
                 setattr(obj,f.name,related)
             else:setattr(obj,key,value)
-        if not user.is_superuser and obj.environment_code not in environments(user):raise APIError('FORBIDDEN','无此环境权限',403)
         if pk and obj.environment_code!=before['environment_code']:raise APIError('IMMUTABLE_ENVIRONMENT','已有对象不能移动环境')
         if pk and before['enabled'] and not obj.enabled:
             refs=[]

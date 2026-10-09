@@ -79,9 +79,9 @@ python3 -m http.server 8789 --bind 127.0.0.1 --directory prototypes/gateway-entr
 
 API/Web 分别构建为独立镜像，包含前端、管理后台静态资源和 CSV 模板。镜像构建命令、NAS 配置与完整安装顺序见 [中文部署说明](deploy/README.md)。
 
-K8s 默认使用 NFS NAS 的 PV/PVC，将 SQLite 数据目录挂载到 `/data`。API 为单副本、一个 sync worker，采用 Recreate 升级，巡检 worker 默认不部署。迁移、管理账号创建、备份和恢复均须停止 API，等待 Pod 退出后串行维护。数据库选择不依赖开发开关；生产保留认证、CSRF 与安全 Cookie。
+K8s 默认使用 NFS NAS 的 PV/PVC，将 SQLite 数据目录挂载到 `/data`。API 为单副本、一个 sync worker，采用 Recreate 升级，巡检 worker 默认不部署。迁移、管理账号创建、备份和恢复均须停止 API，等待 Pod 退出后串行维护。数据库选择不依赖开发开关；生产保留密码认证、角色/环境权限和CSRF校验。默认HTTPS；用户指定纯HTTP时使用 `deploy/k8s/http`，Cookie配置匹配HTTP，Web Pod入口为8080。
 
-使用前需替换 NAS 地址及导出目录、镜像仓库、域名与 Secret。NAS 目录需允许 UID/GID 10001 写入。DELETE 日志与 FULL 同步不能替代目标 NAS 的锁及持久性验收；本地镜像检查不代表真实 K8s、NAS 或 TLS 已通过验收。设计边界见 [Docker 与 NAS 设计](docs/docker-nas-design.md)。
+使用前需替换 NAS 地址及导出目录、镜像仓库、域名与 Secret。NAS 目录需允许 UID/GID 10001 写入。DELETE 日志与 FULL 同步不能替代目标 NAS 的锁及持久性验收；本地配置验证不代表AMD64成品、真实K8s或NAS已通过验收。设计边界见 [Docker 与 NAS 设计](docs/docker-nas-design.md)。HTTP直连安装步骤见 [部署说明](deploy/README.md#纯-httppod-直连无-ingress)，现场准备项见 [生产清单](docs/deployment-production-checklist.md)。新增HTTP方案需构建0.3.0镜像；当前没有已上传的容器镜像，不能使用旧0.2.0 API镜像。
 
 ## 测试
 

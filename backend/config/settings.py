@@ -2,6 +2,9 @@ import os
 from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 LOCAL = os.environ.get('CONTROL_LOCAL', '') == '1'
+CONTROL_TRANSPORT = os.environ.get('CONTROL_TRANSPORT', 'https')
+if CONTROL_TRANSPORT not in {'http', 'https'}:
+    raise RuntimeError('CONTROL_TRANSPORT must be http or https')
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'local-development-only' if LOCAL else '')
 if not SECRET_KEY:
     raise RuntimeError('Set DJANGO_SECRET_KEY; CONTROL_LOCAL=1 is only for isolated development')
@@ -33,9 +36,9 @@ LANGUAGE_CODE = 'zh-hans'
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR/'staticfiles'
 SESSION_COOKIE_HTTPONLY = True
-SESSION_COOKIE_SECURE = not LOCAL
+SESSION_COOKIE_SECURE = not LOCAL and CONTROL_TRANSPORT == 'https'
 SESSION_COOKIE_SAMESITE = 'Lax'
-CSRF_COOKIE_SECURE = not LOCAL
+CSRF_COOKIE_SECURE = not LOCAL and CONTROL_TRANSPORT == 'https'
 CSRF_FAILURE_VIEW = 'control.views.csrf_failure'
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = 'SAMEORIGIN'
@@ -46,7 +49,8 @@ ALLOW_DEMO_IMPORT = LOCAL and os.environ.get('ALLOW_DEMO_IMPORT') == '1'
 AUTH_PASSWORD_VALIDATORS = [{'NAME':'django.contrib.auth.password_validation.MinimumLengthValidator'}]
 
 CSRF_TRUSTED_ORIGINS = [x for x in os.environ.get('CSRF_TRUSTED_ORIGINS','').split(',') if x]
-SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+# Direct HTTP has no trusted TLS terminator; ignore client-supplied protocol headers.
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https') if CONTROL_TRANSPORT == 'https' else None
 
 # Passwordless is an explicitly enabled, direct-loopback development capability.
 PASSWORDLESS_LOCAL = os.environ.get('CONTROL_PASSWORDLESS_LOCAL') == '1'

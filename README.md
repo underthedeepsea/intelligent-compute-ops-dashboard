@@ -2,7 +2,7 @@
 
 **Intelligent Compute Ops Dashboard**：面向智算集群的五屏观测界面、AI Gateway 资源控制台和独立录入流程原型。
 
-静态 HTML / CSS / JavaScript 前端，Django 后端；本地使用 SQLite，部署配置提供 PostgreSQL 与 Nginx。无需前端构建步骤。
+静态 HTML / CSS / JavaScript 前端，Django 后端；本地使用 SQLite，K8s 默认通过 NAS PV/PVC 持久化 SQLite，Compose 保留 PostgreSQL。无需前端构建步骤。
 
 ![01 全局运维总览](docs/screenshots/overview.png)
 
@@ -75,6 +75,14 @@ python3 -m http.server 8789 --bind 127.0.0.1 --directory prototypes/gateway-entr
 
 **已知未解决事项**：批量导入的显式名称引用可能与导入别名冲突；同页重复载入完整示例可能复用已保存 UUID。暂不将该原型的批量导入用于重要数据。这两项不属于本轮01拓扑调整。
 
+## Docker 与 Kubernetes 部署
+
+API/Web 分别构建为独立镜像，包含前端、管理后台静态资源和 CSV 模板。镜像构建命令、NAS 配置与完整安装顺序见 [中文部署说明](deploy/README.md)。
+
+K8s 默认使用 NFS NAS 的 PV/PVC，将 SQLite 数据目录挂载到 `/data`。API 为单副本、一个 sync worker，采用 Recreate 升级，巡检 worker 默认不部署。迁移、管理账号创建、备份和恢复均须停止 API，等待 Pod 退出后串行维护。数据库选择不依赖开发开关；生产保留认证、CSRF 与安全 Cookie。
+
+使用前需替换 NAS 地址及导出目录、镜像仓库、域名与 Secret。NAS 目录需允许 UID/GID 10001 写入。DELETE 日志与 FULL 同步不能替代目标 NAS 的锁及持久性验收；本地镜像检查不代表真实 K8s、NAS 或 TLS 已通过验收。设计边界见 [Docker 与 NAS 设计](docs/docker-nas-design.md)。
+
 ## 测试
 
 ```bash
@@ -95,7 +103,7 @@ prototypes/gateway-entry-flow/  浏览器本地录入原型
 demo/local_preview/      离线演示数据生成器
 contracts/               接口与来源契约
 templates/               CSV 模板
-deploy/                  Docker Compose / Nginx 部署配置
+deploy/                  镜像构建 / Compose / K8s NAS PV/PVC 部署配置
 docs/                    目录录入、监控与上线检查说明
 ```
 

@@ -12,7 +12,21 @@ MIDDLEWARE = ['django.middleware.security.SecurityMiddleware','django.contrib.se
 ROOT_URLCONF = 'config.urls'
 TEMPLATES = [{'BACKEND':'django.template.backends.django.DjangoTemplates','APP_DIRS':True,'OPTIONS':{'context_processors':['django.template.context_processors.request','django.contrib.auth.context_processors.auth','django.contrib.messages.context_processors.messages']}}]
 WSGI_APPLICATION = 'config.wsgi.application'
-DATABASES = {'default': {'ENGINE':'django.db.backends.sqlite3','NAME':os.environ.get('SQLITE_PATH',str(BASE_DIR/'local.sqlite3'))}} if LOCAL else {'default': {'ENGINE':'django.db.backends.postgresql','NAME':os.environ.get('PGDATABASE','control_plane'),'USER':os.environ.get('PGUSER','control_plane'),'PASSWORD':os.environ.get('PGPASSWORD',''),'HOST':os.environ.get('PGHOST','db'),'PORT':os.environ.get('PGPORT','5432'),'CONN_MAX_AGE':60}}
+# Database choice does not enable local development or passwordless access.
+DATABASE_ENGINE = os.environ.get('DATABASE_ENGINE', 'sqlite' if LOCAL else 'postgresql')
+if DATABASE_ENGINE == 'sqlite':
+    DATABASES = {'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': os.environ.get('SQLITE_PATH', str(BASE_DIR/'local.sqlite3')),
+        'OPTIONS': {
+            'timeout': 30,
+            'init_command': 'PRAGMA journal_mode=DELETE; PRAGMA synchronous=FULL;',
+        },
+    }}
+elif DATABASE_ENGINE == 'postgresql':
+    DATABASES = {'default': {'ENGINE':'django.db.backends.postgresql','NAME':os.environ.get('PGDATABASE','control_plane'),'USER':os.environ.get('PGUSER','control_plane'),'PASSWORD':os.environ.get('PGPASSWORD',''),'HOST':os.environ.get('PGHOST','db'),'PORT':os.environ.get('PGPORT','5432'),'CONN_MAX_AGE':60}}
+else:
+    raise RuntimeError('DATABASE_ENGINE must be sqlite or postgresql')
 USE_TZ = True
 TIME_ZONE = 'UTC'
 LANGUAGE_CODE = 'zh-hans'

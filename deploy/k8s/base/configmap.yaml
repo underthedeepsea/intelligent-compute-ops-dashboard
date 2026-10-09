@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: control-config
+  namespace: ai-ops
+data:
+  DATABASE_ENGINE: sqlite
+  SQLITE_PATH: /data/control.sqlite3
+  ALLOWED_HOSTS: localhost,127.0.0.1,control.example.internal
+  CSRF_TRUSTED_ORIGINS: https://control.example.internal
+  INSPECTION_ALLOWED_URLS: ""

@@ -1,6 +1,47 @@
 # Docker 镜像与 Kubernetes NAS 部署
 
-部署设计与边界见 [设计](../docs/docker-nas-design.md) 与 [实施计划](../docs/docker-nas-implementation.md)。Kubernetes 默认 **NAS PV/PVC + SQLite**，不启用本地模式；Compose 保留 PostgreSQL 方案。没有真实集群、NAS 或巡检联调验收。本配置不能作为生产就绪证明。
+部署设计与边界见 [设计](../docs/docker-nas-design.md) 与 [实施计划](../docs/docker-nas-implementation.md)。Kubernetes 默认 **NAS PV/PVC + SQLite**，不启用本地模式；Compose 保留 PostgreSQL 方案。用户指定的纯HTTP入口使用下节HTTP配置；原base保留HTTPS默认。没有真实集群、NAS 或巡检联调验收。本配置不能作为生产就绪证明。
+
+## 纯 HTTP：Pod 直连，无 Ingress
+
+用户环境为 Linux AMD64 K8s，Web Pod IP 可被浏览器/电视访问。使用 **`deploy/k8s/http`**，不要直接把原 HTTPS base 作为 HTTP方案。应用入口为 `http://Web-Pod-IP:8080`；Web转发API的8000，保留集群内 `api` Service 和DNS。无需Ingress、TLS Secret、证书或443/8443应用端口。
+
+此路线是v0.2.0之后新增的配置，清单使用 **0.3.0**，必须从包含HTTP改动的源码构建相应镜像，不能使用旧0.2.0 API镜像。用户已取消镜像上传，本次不提供公开可拉取的镜像地址。
+
+```sh
+/path/to/ai-ops-control-plane/deploy/build.sh \
+  --registry registry.example.internal/control --version 0.3.0 --platform linux/amd64
+```
+
+把部署材料复制到部署专用目录，替换NAS地址/目录、应用与迁移清单的仓库/tag或digest；私有仓库另配置imagePullSecrets。将base/configmap.yaml的`ALLOWED_HOSTS`替换为实际Web Pod IP（或域名），共享http/config/configmap-patch.yaml的CSRF origin改为 `http://实际地址:8080`，不要使用通配符。Pod IP重建后变化时同步配置与访问地址。
+
+`CONTROL_TRANSPORT=http` 使Session/CSRF Cookie适用于HTTP，后端忽略外来 `X-Forwarded-Proto`；HTTP Nginx按自身连接协议覆盖该头。密码、角色/环境权限和CSRF均保留，LOCAL/DEBUG/免密不得开启。独立Nginx ConfigMap会自动生成版本哈希并挂载至Web；其原生HTTP探针和静态资源仍使用8080。
+
+按以下顺序操作，完整的Job失败处理、管理员授权、备份恢复与NAS验收仍遵守本文对应章节：
+
+```sh
+# 先离线渲染，确认配置/仓库/版本/NAS占位符全部替换。
+kubectl kustomize deploy/k8s/http > /tmp/control-http.yaml
+kubectl kustomize deploy/k8s/http/migrate > /tmp/control-http-migrate.yaml
+# 先安装命名空间、HTTP配置、Nginx配置和PV/PVC；此profile不含Deployment。
+kubectl apply -k deploy/k8s/http/prerequisites
+kubectl apply -f /secure/path/control-secret.yaml
+kubectl -n ai-ops wait pvc/control-data --for=jsonpath='{.status.phase}'=Bound --timeout=120s
+# 确保所有API和维护写者均已退出，再执行唯一迁移Job。
+kubectl apply -k deploy/k8s/http/migrate
+kubectl -n ai-ops wait job/control-migrate --for=condition=complete --timeout=600s
+kubectl -n ai-ops logs job/control-migrate
+# 确认全部迁移容器退出后串行初始化管理员，再启动应用。
+# 管理员Job的API镜像必须也替换为同一0.3.0版本；不得沿用示例中的0.2.0。
+kubectl apply -k deploy/k8s/http
+kubectl -n ai-ops rollout status deployment/control-api --timeout=180s
+kubectl -n ai-ops rollout status deployment/control-web --timeout=180s
+kubectl -n ai-ops get pods -l app=control-web -o wide
+```
+
+不要在应用启动前 `apply -k http`：它包含Deployment，会提前启动API。准备资源使用HTTP prerequisites profile，**不能直接应用原base/configmap.yaml**，否则会丢失HTTP模式与HTTP origin。管理员步骤见“清单与首次安装顺序”第4步，仍使用仓库外Secret与私有Job，完成且容器退出后才运行上面的启动命令。维护时停止所有API并按Job状态处理，升级恢复使用 `apply -k http` 而不是base。
+
+仅对需要访问的客户端开放Web8080；限制API8000和NAS访问。现场准备项见 [生产清单](../docs/deployment-production-checklist.md)。AMD64构建、镜像分发和真实NAS/K8s联调仍需现场完成。
 
 ## 构建两个独立镜像
 
@@ -27,14 +68,14 @@ API 默认一个 Gunicorn sync worker、一个线程；Web 监听 8080。两者 
 - 挂载整个 `/data`，保存 SQLite 与同目录回滚日志，禁止只用 `subPath` 挂数据库文件。`20Gi` 是 PV/PVC 声明，不会自动创建 NAS 配额；配额与容量告警由 NAS 设置。
 - `ReadWriteMany` 不代表允许应用并发写。默认只有一个 API Pod、一个 sync worker/线程，`Recreate` 更新；无 HPA、无默认巡检 worker。禁止增加副本、用多个发布实例共享此目录或并行维护任务。
 - 迁移、创建/更改管理员、角色授权、导入管理命令、备份恢复都须先停止 API，等待所有 API 和维护 Pod 退出，再运行唯一维护 Job。禁止在运行中的 API 上 `kubectl exec ... manage.py` 写库。正常浏览器管理/CSV 导入由唯一 API 进程处理。
-- `CONTROL_LOCAL` 与 `CONTROL_PASSWORDLESS_LOCAL` 均不得开启。`DATABASE_ENGINE=sqlite` 单独选择数据库；DEBUG 仍为 false，Cookie 仍 Secure，必须配置 SECRET、HTTPS、Host 与 CSRF origin。未指定引擎的历史非 LOCAL 配置仍默认 PostgreSQL。
+- `CONTROL_LOCAL` 与 `CONTROL_PASSWORDLESS_LOCAL` 均不得开启。`DATABASE_ENGINE=sqlite` 单独选择数据库；DEBUG 仍为 false；默认HTTPS使用Secure Cookie，显式HTTP模式按上节配置。两种模式均须配置SECRET、Host与匹配协议/端口的CSRF origin。未指定引擎的历史非 LOCAL 配置仍默认 PostgreSQL。
 - Django 连接设置 `timeout=30`、`journal_mode=DELETE`、`synchronous=FULL`；不使用 WAL。若旧库处于 WAL 状态，转换前必须在维护窗口安全 checkpoint/关闭所有连接并备份，禁止直接删除 WAL/SHM。
 
 [NFS 场景下 SQLite 官方警示](https://sqlite.org/useovernet.html)指出，网络文件系统的锁和同步行为可能导致损坏；[WAL 官方说明](https://sqlite.org/wal.html)说明 WAL 不适用于网络文件系统。DELETE/FULL、单进程和 30 秒等待都不能修复失效的 NFS 锁或保证 NAS 耐久性。[Django 5.2 文档](https://docs.djangoproject.com/en/5.2/ref/databases/#setting-pragma-options)支持连接初始化 PRAGMA。目标 NAS 不通过验收时暂停上线；用户若另行选择 PostgreSQL，再切换可选路线。
 
 ## 清单与首次安装顺序
 
-所有命令是部署者执行的示例，本次没有执行 K8s 写操作。先备份清单到部署专用目录，在副本中替换：NAS server/export、仓库/tag 或 digest、域名、命名空间（若调整需同步 PV claimRef、全部示例）、Ingress class、TLS Secret。镜像私有仓库另配 `imagePullSecrets`。所有 `REPLACE_*`/`example.invalid` 必须消除。
+以下base安装命令描述原HTTPS路线；用户选定的HTTP路线使用上节HTTP清单及初始化顺序。所有命令是部署者执行的示例，本次没有执行 K8s 写操作。先备份清单到部署专用目录，在副本中替换：NAS server/export、仓库/tag 或 digest、域名、命名空间（若调整需同步 PV claimRef、全部示例）、Ingress class、TLS Secret。镜像私有仓库另配 `imagePullSecrets`。所有 `REPLACE_*`/`example.invalid` 必须消除。
 
 `base` 包含 Namespace、ConfigMap、PV/PVC、API/Web Deployment/Service；**不包含 Secret、TLS Ingress 或维护 Job**。`migrate` 只包含一次迁移 Job，引用提前创建的 ConfigMap、Secret、PVC。分别离线预览：
 
@@ -205,7 +246,7 @@ print('备份成功：源与目标应用 schema、迁移和完整性均通过校
 - 实际 SQLite 连接确认 DELETE、FULL、busy_timeout=30000；测试写入、同步确认后的重新挂载读取与 integrity_check。
 - NAS/NFS 厂商支持的文件锁、fsync/稳定存储语义；网络中断、客户端异常退出、NAS重启后回滚日志恢复和完整性。检查出现 I/O error/locked 时不会额外启动写者。
 - 节点失联时的旧写者隔离、重调度、备份恢复演练；单进程吞吐与人工CSV导入负载满足目标。
-- TLS、Host/CSRF、安全Cookie、未经授权访问、CSV模板/静态管理资源、2 MiB代理、只读根文件系统与 Secret 运维。
+- 所选协议的登录与Cookie、Host/CSRF、未经授权访问、CSV模板/静态管理资源、2 MiB代理、只读根文件系统与Secret运维；HTTP路线不要求TLS验收。
 
 RWX/Retain/PRAGMA 配置正确并不等于上述外部验收通过；不能保证任意 NFS 实现可靠锁定。
 

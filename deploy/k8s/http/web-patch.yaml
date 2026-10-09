@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: control-web
+  namespace: ai-ops
+spec:
+  template:
+    spec:
+      containers:
+        - name: web
+          volumeMounts:
+            - name: http-nginx
+              mountPath: /etc/nginx/nginx.conf
+              subPath: nginx.conf
+              readOnly: true
+      volumes:
+        - name: http-nginx
+          configMap:
+            name: control-http-nginx

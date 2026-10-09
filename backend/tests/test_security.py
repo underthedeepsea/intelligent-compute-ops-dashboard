@@ -1,22 +1,54 @@
 import json
-from django.test import TransactionTestCase,Client
-from django.contrib.auth.models import User,Group
-from control.models import AccessScope,Team
+from django.test import TransactionTestCase, Client
+from django.contrib.auth.models import User, Group
+from control.models import AccessScope, Team, AuditEvent
 class SecurityTests(TransactionTestCase):
-    def test_session_csrf_and_tv_boundaries(self):
-        user=User.objects.create_user('tv',password='secure-test-pass');user.groups.add(Group.objects.create(name='screen_viewer'));AccessScope.objects.create(user=user,environment_code='prod')
-        client=Client(enforce_csrf_checks=True)
-        self.assertEqual(client.get('/api/v1/screens/bootstrap').status_code,401)
-        self.assertEqual(client.post('/api/v1/session/login',json.dumps({'username':'tv','password':'secure-test-pass'}),content_type='application/json').status_code,403)
-        token=client.get('/api/v1/session').json()['data']['csrf_token']
-        self.assertEqual(client.post('/api/v1/session/login',json.dumps({'username':'tv','password':'secure-test-pass'}),content_type='application/json',HTTP_X_CSRFTOKEN=token).status_code,200)
-        for path in ['catalog/teams','gateway/keys','topology','audit-events','integrations/status']:
-            self.assertEqual(client.get('/api/v1/'+path).status_code,403,path)
+    def test_direct_csrf_and_projection_boundaries(self):
+        self.assertEqual(User.objects.count(),0)
+        c=Client(enforce_csrf_checks=True)
+        for path in ['catalog/teams','gateway/keys','audit-events','integrations/status','screens/bootstrap']:
+            self.assertEqual(c.get('/api/v1/'+path).status_code,200,path)
+        access=c.get('/api/v1/session').json()['data']
+        self.assertEqual(access['access_mode'],'direct'); self.assertTrue(access['can_write'])
+        self.assertTrue({'PRD','DR','STG','DEV'}<=set(access['environments']))
+        for field in ['authenticated','username','roles','local_passwordless_available']: self.assertNotIn(field,access)
+        data=json.dumps({'code':'t','name':'t','environment_code':'custom'})
+        self.assertEqual(c.post('/api/v1/catalog/teams',data,content_type='application/json').status_code,403)
+        token=access['csrf_token']
+        self.assertEqual(c.post('/api/v1/catalog/teams',data,content_type='application/json',HTTP_X_CSRFTOKEN=token,HTTP_ORIGIN='http://attacker.invalid').status_code,403)
+        self.assertEqual(c.post('/api/v1/catalog/teams',data,content_type='application/json',HTTP_X_CSRFTOKEN=token).status_code,201)
+        self.assertEqual(AuditEvent.objects.get().actor,'anonymous')
+        for action in ['login','logout','local']:
+            self.assertEqual(c.post('/api/v1/session/'+action,'{}',content_type='application/json',HTTP_X_CSRFTOKEN=token).status_code,404)
+        for path in ['/admin/','/admin/login/']: self.assertEqual(c.get(path).status_code,404)
         for name in ['overview','pd-groups','infrastructure','services','critical-apps','bootstrap']:
-            r=client.get('/api/v1/screens/'+name);self.assertEqual(r.status_code,200);self.assertNotIn('credential_ref',r.content.decode());self.assertNotIn('address_ref',r.content.decode())
-    def test_scope_details_and_admin(self):
-        u=User.objects.create_user('op');u.groups.add(Group.objects.create(name='operator'));AccessScope.objects.create(user=u,environment_code='prod');self.client.force_login(u)
-        t=Team.objects.create(code='secret',name='secret',environment_code='other')
-        self.assertEqual(self.client.get('/api/v1/catalog/teams/'+str(t.pk)).status_code,404)
-        self.assertEqual(self.client.get('/api/v1/catalog/teams').json()['data']['items'],[])
-        self.assertEqual(self.client.post('/api/v1/catalog/teams',{},content_type='application/json').status_code,403)
+            response=c.get('/api/v1/screens/'+name); self.assertEqual(response.status_code,200)
+            for field in ['credential_ref','address_ref']: self.assertNotIn(field,response.content.decode())
+        self.assertEqual(User.objects.count(),0); self.assertEqual(Group.objects.count(),0); self.assertEqual(AccessScope.objects.count(),0)
+    def test_all_registered_environments_even_disabled_and_old_cookie(self):
+        t=Team.objects.create(code='t',name='t',environment_code='other',enabled=False)
+        self.client.cookies['sessionid']='obsolete-cookie'
+        self.assertEqual(self.client.get('/api/v1/catalog/teams/'+str(t.pk)).status_code,200)
+        self.assertIn('other',self.client.get('/api/v1/session').json()['data']['environments'])
+        self.assertNotIn('sessionid',self.client.get('/api/v1/session').cookies)
+
+    def test_legacy_identity_records_do_not_limit_access(self):
+        u=User.objects.create_user('legacy');g=Group.objects.create(name='screen_viewer');u.groups.add(g)
+        AccessScope.objects.create(user=u,environment_code='local')
+        Team.objects.create(code='prod',name='Prod',environment_code='PRD')
+        Team.objects.create(code='dr',name='DR',environment_code='DR',enabled=False)
+        self.client.force_login(u)
+        self.assertEqual(len(self.client.get('/api/v1/catalog/teams').json()['data']['items']),2)
+        response=self.client.post('/api/v1/catalog/teams',json.dumps({'code':'new','name':'New','environment_code':'OTHER'}),content_type='application/json')
+        self.assertEqual(response.status_code,201)
+        self.assertEqual(AuditEvent.objects.get().actor,'anonymous')
+        self.assertEqual(User.objects.get().username,'legacy');self.assertEqual(AccessScope.objects.get().environment_code,'local')
+    def test_admin_migration_graph_retained_without_auth_middleware(self):
+        from django.conf import settings
+        from django.db.migrations.loader import MigrationLoader
+        from django.contrib.admin.apps import AdminConfig
+        from config.legacy_admin import LegacyAdminConfig
+        self.assertEqual(AdminConfig.name,LegacyAdminConfig.name)
+        self.assertIn(('admin','0001_initial'),MigrationLoader(None).graph.nodes)
+        for name in ['SessionMiddleware','AuthenticationMiddleware','LocalSessionGuard']:
+            self.assertFalse(any(name in item for item in settings.MIDDLEWARE))

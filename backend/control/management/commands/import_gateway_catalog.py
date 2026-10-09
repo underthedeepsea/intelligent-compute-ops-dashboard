@@ -2,18 +2,18 @@ import hashlib,json
 from django.core.management.base import BaseCommand,CommandError
 from django.db import transaction
 from django.conf import settings
-from django.contrib.auth.models import User
 from control.catalog import COLLECTIONS,save,APIError
 from control.models import ImportRecord
 class Command(BaseCommand):
     help='Import reviewed JSON directory records (never execute JavaScript)'
     def add_arguments(self,p):
-        p.add_argument('--file',required=True);p.add_argument('--dry-run',action='store_true');p.add_argument('--allow-demo',action='store_true');p.add_argument('--actor',required=True)
+        p.add_argument('--file',required=True);p.add_argument('--dry-run',action='store_true');p.add_argument('--allow-demo',action='store_true');p.add_argument('--actor',default='cli-import')
     def handle(self,*args,**opts):
         try:
             raw=open(opts['file'],'rb').read(1048577)
             if len(raw)>1048576:raise ValueError('File too large')
-            data=json.loads(raw);actor=User.objects.get(username=opts['actor'],is_superuser=True)
+            data=json.loads(raw);actor=opts['actor']
+            if not isinstance(actor,str) or not actor.strip() or len(actor)>150:raise ValueError('Actor source must be a nonempty string of at most 150 characters')
             if set(data)!={'source_namespace','source_kind','records'}:raise ValueError('Expected source_namespace, source_kind, records')
             if data['source_kind'] not in {'DEMO','REVIEWED'}:raise ValueError('Unknown source kind')
             if data['source_kind']=='DEMO' and not (opts['allow_demo'] and settings.ALLOW_DEMO_IMPORT):raise ValueError('Demo import disabled; isolated local flag and --allow-demo both required')
@@ -35,4 +35,4 @@ class Command(BaseCommand):
                     mapping[row['collection']+':'+legacy]=str(obj.pk);created+=1
                 if opts['dry_run']:transaction.set_rollback(True)
             self.stdout.write(json.dumps({'dry_run':opts['dry_run'],'created':created,'mapping':mapping},ensure_ascii=False))
-        except (ValueError,KeyError,TypeError,APIError,User.DoesNotExist) as e:raise CommandError(str(e))
+        except (ValueError,KeyError,TypeError,APIError) as e:raise CommandError(str(e))

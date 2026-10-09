@@ -8,8 +8,7 @@ from control.topology import topology
 
 class TopologyDemoTests(TestCase):
     def setUp(self):
-        self.user = User.objects.create_user('viewer')
-        m.AccessScope.objects.create(user=self.user, environment_code='local')
+        self.user = 'anonymous'
         self.cluster = m.KubernetesCluster.objects.create(code='c', name='Cluster', environment_code='local')
         self.items = []
         for i in range(2):
@@ -52,8 +51,6 @@ class TopologyDemoTests(TestCase):
         pod.save()
         nodes = topology(self.user, 'model', str(self.items[0][1].pk))['nodes']
         self.assertFalse(any(n['type']=='node' and n['origin']=='DEMO' for n in nodes))
-        m.AccessScope.objects.filter(user=self.user).delete()
-        with self.assertRaises(APIError):
-            topology(self.user, 'node', f'{self.cluster.pk}:DEMO:node%2F1%3Ademo')
+        self.assertTrue(topology(self.user, 'node', f'{self.cluster.pk}:DEMO:node%2F1%3Ademo')['nodes'])
         with self.assertRaises(APIError):
             topology(self.user, 'node', '../malformed')

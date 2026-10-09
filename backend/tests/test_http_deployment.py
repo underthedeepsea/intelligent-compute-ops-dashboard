@@ -17,7 +17,7 @@ from django.test import RequestFactory
 print(json.dumps({
     'transport': settings.CONTROL_TRANSPORT,
     'local': settings.LOCAL, 'debug': settings.DEBUG,
-    'passwordless': settings.PASSWORDLESS_LOCAL,
+    'passwordless': hasattr(settings,'PASSWORDLESS_LOCAL'),
     'demo_import': settings.ALLOW_DEMO_IMPORT,
     'session_secure': settings.SESSION_COOKIE_SECURE,
     'csrf_secure': settings.CSRF_COOKIE_SECURE,
@@ -26,56 +26,31 @@ print(json.dumps({
 }))
 '''
 CLIENT_PROBE = '''
-import json
-import django
+import json, django
 django.setup()
 from django.core.management import call_command
 from django.contrib.auth.models import User, Group
 from django.test import Client
-from control.models import AccessScope
+from control.models import AccessScope, AuditEvent
 call_command('migrate', verbosity=0, interactive=False)
-user = User.objects.create_user('http-reader', password='secure-test-pass')
-user.groups.add(Group.objects.create(name='operator'))
-AccessScope.objects.create(user=user, environment_code='prod')
-client = Client(enforce_csrf_checks=True, HTTP_HOST='control.example.internal:8080')
-credentials = json.dumps({'username': 'http-reader', 'password': 'secure-test-pass'})
-def post(path, token=None, **headers):
-    if token:
-        headers['HTTP_X_CSRFTOKEN'] = token
-    return client.post(path, credentials if path.endswith('/login') else '{}',
-                       content_type='application/json', **headers)
-def status(response, expected):
-    assert response.status_code == expected, (response.status_code, response.content)
-status(client.get('/api/v1/screens/bootstrap'), 401)
-status(post('/api/v1/session/login'), 403)
-session = client.get('/api/v1/session', HTTP_X_FORWARDED_PROTO='https')
-assert not session.wsgi_request.is_secure()
-assert not session.cookies['csrftoken']['secure']
-assert not session.json()['data']['local_passwordless_available']
-token = session.json()['data']['csrf_token']
-status(post('/api/v1/session/login', token, HTTP_ORIGIN='http://attacker.invalid'), 403)
-response = post('/api/v1/session/login', token,
-                HTTP_ORIGIN='http://control.example.internal:8080',
-                HTTP_X_FORWARDED_PROTO='https')
-status(response, 200)
-assert response.json()['data']['authenticated']
-assert not response.wsgi_request.is_secure()
-assert not response.cookies['sessionid']['secure']
-assert not response.cookies['csrftoken']['secure']
-assert response.cookies['sessionid']['httponly']
-assert response.cookies['sessionid']['samesite'] == 'Lax'
-token = response.json()['data']['csrf_token']
-status(client.get('/api/v1/catalog/teams'), 200)
-status(post('/api/v1/catalog/teams', token), 403)
-status(post('/api/v1/session/local', token), 403)
-status(post('/api/v1/session/logout'), 403)
-status(post('/api/v1/session/logout', token, HTTP_ORIGIN='http://attacker.invalid'), 403)
-assert client.get('/api/v1/session').json()['data']['authenticated']
-status(post('/api/v1/session/logout', token,
-            HTTP_ORIGIN='http://control.example.internal:8080'), 200)
-status(client.get('/api/v1/screens/bootstrap'), 401)
-print(json.dumps({'http_password_login': 'passed', 'csrf': 'passed',
-                  'authorization': 'passed', 'spoofed_proto': 'ignored'}))
+c=Client(enforce_csrf_checks=True,HTTP_HOST='control.example.internal:8080')
+r=c.get('/api/v1/session',HTTP_X_FORWARDED_PROTO='https')
+assert r.status_code==200 and not r.wsgi_request.is_secure()
+a=r.json()['data']; assert a['access_mode']=='direct' and a['can_write']
+assert not r.cookies['csrftoken']['secure'] and 'sessionid' not in r.cookies
+token=a['csrf_token']
+def post(path,data,**headers): return c.post(path,json.dumps(data),content_type='application/json',**headers)
+payload={'code':'prd','name':'production','environment_code':'PRD'}
+assert post('/api/v1/catalog/teams',payload).status_code==403
+assert post('/api/v1/catalog/teams',payload,HTTP_X_CSRFTOKEN=token,HTTP_ORIGIN='http://attacker.invalid').status_code==403
+r=post('/api/v1/catalog/teams',payload,HTTP_X_CSRFTOKEN=token,HTTP_ORIGIN='http://control.example.internal:8080')
+assert r.status_code==201, r.content
+assert AuditEvent.objects.get().actor=='anonymous'
+for action in ['local','login','logout']: assert post('/api/v1/session/'+action,{},HTTP_X_CSRFTOKEN=token).status_code==404
+assert c.get('/admin/').status_code==404
+for kind in ['overview','pd-groups','infrastructure','services','critical-apps','bootstrap']: assert c.get('/api/v1/screens/'+kind).status_code==200
+assert User.objects.count()==Group.objects.count()==AccessScope.objects.count()==0
+print(json.dumps({'direct_access':'passed','csrf':'passed','spoofed_proto':'ignored'}))
 '''
 
 
@@ -135,13 +110,10 @@ class HttpDeploymentTests(unittest.TestCase):
                 self.assertNotEqual(result.returncode, 0)
                 self.assertIn('CONTROL_TRANSPORT must be http or https', result.stderr)
 
-    def test_http_cannot_enable_production_passwordless(self):
-        result = self.probe({'CONTROL_TRANSPORT': 'http',
-                             'CONTROL_PASSWORDLESS_LOCAL': '1',
-                             'CONTROL_PASSWORDLESS_USERNAME': 'admin',
-                             'CONTROL_PASSWORDLESS_ENVIRONMENT': 'prod'})
-        self.assertNotEqual(result.returncode, 0)
-        self.assertIn('Local passwordless requires CONTROL_LOCAL=1', result.stderr)
+    def test_obsolete_identity_flags_have_no_effect(self):
+        result=self.probe({'DATABASE_ENGINE':'sqlite','CONTROL_TRANSPORT':'http','CONTROL_PASSWORDLESS_LOCAL':'1'})
+        self.assertEqual(result.returncode,0,result.stderr)
+        self.assertFalse(json.loads(result.stdout)['passwordless'])
 
     def test_http_still_requires_production_secret(self):
         result = self.probe({'CONTROL_TRANSPORT': 'http', 'DJANGO_SECRET_KEY': ''})
@@ -151,7 +123,7 @@ class HttpDeploymentTests(unittest.TestCase):
     def test_real_http_client_security_boundaries(self):
         result = self.probe({'CONTROL_TRANSPORT': 'http'}, CLIENT_PROBE)
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(json.loads(result.stdout)['http_password_login'], 'passed')
+        self.assertEqual(json.loads(result.stdout)['direct_access'], 'passed')
 
 
 if __name__ == '__main__':

@@ -4,7 +4,7 @@ from django.contrib.auth.models import User,Group
 from control import models as m
 class CatalogTests(TransactionTestCase):
     def setUp(self):
-        self.user=User.objects.create_user('admin',password='test-password-123',is_staff=True);self.user.groups.add(Group.objects.create(name='catalog_admin'));m.AccessScope.objects.create(user=self.user,environment_code='prod');self.client.force_login(self.user)
+        self.user='anonymous'
     def post(self,path,data):return self.client.post('/api/v1/'+path,data=json.dumps(data),content_type='application/json')
     def entity(self,collection,code,**fields):
         response=self.post('catalog/'+collection,dict(code=code,name=code,environment_code='prod',**fields));self.assertEqual(response.status_code,201,response.content);return response.json()['data']
@@ -12,8 +12,8 @@ class CatalogTests(TransactionTestCase):
         t=self.entity('teams','t')
         response=self.client.patch('/api/v1/catalog/teams/'+t['id'],json.dumps({'expected_version':1,'name':'renamed'}),content_type='application/json');self.assertEqual(response.status_code,200)
         self.assertEqual(self.client.patch('/api/v1/catalog/teams/'+t['id'],json.dumps({'expected_version':1,'name':'stale'}),content_type='application/json').status_code,409)
-        self.assertEqual(self.post('catalog/teams',{'code':'x','name':'x','environment_code':'other'}).status_code,403)
-        self.assertEqual(m.AuditEvent.objects.count(),2);self.assertEqual(m.Revision.objects.get().metadata,2)
+        self.assertEqual(self.post('catalog/teams',{'code':'x','name':'x','environment_code':'other'}).status_code,201)
+        self.assertEqual(m.AuditEvent.objects.count(),3);self.assertEqual(m.Revision.objects.get().metadata,3)
     def test_relations_and_constraint(self):
         t=self.entity('teams','t');b=self.entity('businesses','b',team_id=t['id'],owner='Ops');model=self.entity('models','m')
         k=self.post('gateway/keys',dict(code='k',name='key',environment_code='prod',team_id=t['id'],business_id=b['id'],external_key_ref='ref-001',masked_label='***001')).json()['data']
@@ -29,6 +29,16 @@ class CatalogTests(TransactionTestCase):
         first=self.client.get('/api/v1/catalog/teams?limit=2').json()['data'];self.assertEqual(len(first['items']),2)
         second=self.client.get('/api/v1/catalog/teams',{'limit':2,'cursor':first['next_cursor']}).json()['data'];self.assertEqual(len(second['items']),1)
         self.assertEqual(self.post('catalog/models',dict(code='x',name='x',environment_code='prod',health='NORMAL')).status_code,400)
+    def test_server_generated_code_and_client_identity_rejection(self):
+        import uuid
+        team=self.post('catalog/teams',dict(name='automatic',environment_code='DEV')).json()['data']
+        self.assertEqual(team['code'],'team-'+team['id']);uuid.UUID(team['id'])
+        key=self.post('gateway/keys',dict(name='key',environment_code='DEV',team_id=team['id'],external_key_ref='external-key',masked_label='***key'))
+        self.assertEqual(key.status_code,201,key.content);self.assertEqual(key.json()['data']['code'],'apikeyref-'+key.json()['data']['id'])
+        denied=self.post('catalog/teams',dict(name='forged',environment_code='DEV',id=str(uuid.uuid4())))
+        self.assertEqual(denied.status_code,400);self.assertEqual(denied.json()['error']['code'],'UNKNOWN_FIELDS')
+        edited=self.client.patch('/api/v1/catalog/teams/'+team['id'],json.dumps({'expected_version':1,'name':'renamed'}),content_type='application/json')
+        self.assertEqual(edited.status_code,200);self.assertEqual(edited.json()['data']['code'],team['code'])
     def test_postgres_concurrent_writes_one_wins(self):
         from django.db import connection,close_old_connections
         if connection.vendor!='postgresql':self.skipTest('PostgreSQL row-lock test')

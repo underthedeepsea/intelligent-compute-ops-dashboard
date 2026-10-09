@@ -15,17 +15,13 @@ async function request(path, options={}) {
  return result;
 }
 function setCSRF(token){csrf=token || '';}
-async function ensureSession(){
- let session=(await request('/api/v1/session')).data;
- setCSRF(session.csrf_token);
- if(!session.authenticated && session.local_passwordless_available){
-  session=(await request('/api/v1/session/local',{method:'POST',body:{}})).data;
-  setCSRF(session.csrf_token);
- }
- if(!session.authenticated){const error=new Error('尚未获得访问身份，请联系管理员配置访问入口。');error.status=401;throw error;}
- return session;
+async function ensureAccess(){
+ const access=(await request('/api/v1/session')).data;
+ setCSRF(access.csrf_token);
+ if(access.access_mode!=='direct'||access.can_write!==true) throw new Error('接口访问元数据无效，请检查服务接口。');
+ return access;
 }
-const api={escape,metric,request,setCSRF,ensureSession};
+const api={escape,metric,request,setCSRF,ensureAccess};
 if(typeof module!=='undefined')module.exports=api;
 root.ControlAPI=api;
 })(typeof window!=='undefined'?window:globalThis);

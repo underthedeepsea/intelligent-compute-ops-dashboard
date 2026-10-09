@@ -21,7 +21,7 @@ spec:
         seccompProfile: {type: RuntimeDefault}
       containers:
         - name: api
-          image: control-api:0.4.0
+          image: control-api:0.4.1
           imagePullPolicy: IfNotPresent
           args: [gunicorn, config.wsgi:application, --bind, "0.0.0.0:8000", --workers, "1", --threads, "1", --worker-class, sync, --worker-tmp-dir, /tmp, --timeout, "30", --access-logfile, "-"]
           ports: [{name: http, containerPort: 8000}]

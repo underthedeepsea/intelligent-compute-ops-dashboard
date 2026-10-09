@@ -19,7 +19,7 @@ spec:
         seccompProfile: {type: RuntimeDefault}
       containers:
         - name: migrate
-          image: control-api:0.4.0
+          image: control-api:0.4.1
           args: [/bin/sh, -ec, "python manage.py migrate --noinput"]
           envFrom:
             - configMapRef: {name: control-config}

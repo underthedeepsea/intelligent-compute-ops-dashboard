@@ -5,6 +5,6 @@ resources:
   - ../../migrate
 images:
   - name: registry.example.invalid/control/control-api
-    newTag: 0.4.0
+    newTag: 0.4.1
 # Reuse control-config, control-secrets and control-data from the HTTP deployment.
 # Run only after API is scaled to zero and all database users have exited.

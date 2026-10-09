@@ -10,8 +10,8 @@ resources:
 images:
   - name: control-api
     newName: registry.example.invalid/control/control-api
-    newTag: 0.4.0
+    newTag: 0.4.1
   - name: control-web
     newName: registry.example.invalid/control/control-web
-    newTag: 0.4.0
+    newTag: 0.4.1
 # Secret, ingress and maintenance jobs are deliberately applied separately.

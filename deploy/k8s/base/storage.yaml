@@ -1,0 +1,33 @@
+# Replace the NAS server and dedicated pre-created export path before applying.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: control-nas-pv
+spec:
+  capacity:
+    storage: 20Gi
+  volumeMode: Filesystem
+  accessModes: [ReadWriteMany]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  claimRef:
+    namespace: ai-ops
+    name: control-data
+  nfs:
+    server: REPLACE_WITH_NAS_SERVER
+    path: /REPLACE_WITH_DEDICATED_NAS_EXPORT
+    readOnly: false
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: control-data
+  namespace: ai-ops
+spec:
+  volumeMode: Filesystem
+  accessModes: [ReadWriteMany]
+  storageClassName: ""
+  volumeName: control-nas-pv
+  resources:
+    requests:
+      storage: 20Gi

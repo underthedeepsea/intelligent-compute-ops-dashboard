@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: control-api
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels: {app: control-api}
+  template:
+    metadata:
+      labels: {app: control-api}
+    spec:
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 40
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: api
+          image: control-api:0.2.0
+          imagePullPolicy: IfNotPresent
+          args: [gunicorn, config.wsgi:application, --bind, "0.0.0.0:8000", --workers, "1", --threads, "1", --worker-class, sync, --worker-tmp-dir, /tmp, --timeout, "30", --access-logfile, "-"]
+          ports: [{name: http, containerPort: 8000}]
+          envFrom:
+            - configMapRef: {name: control-config}
+            - secretRef: {name: control-secrets}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          resources:
+            requests: {cpu: 100m, memory: 128Mi}
+            limits: {cpu: "1", memory: 256Mi}
+          startupProbe:
+            httpGet: {path: /healthz, port: http, httpHeaders: [{name: Host, value: localhost}]}
+            periodSeconds: 2
+            failureThreshold: 30
+          livenessProbe:
+            httpGet: {path: /healthz, port: http, httpHeaders: [{name: Host, value: localhost}]}
+            periodSeconds: 15
+          readinessProbe:
+            httpGet: {path: /readyz, port: http, httpHeaders: [{name: Host, value: localhost}]}
+            periodSeconds: 10
+          volumeMounts:
+            - {name: data, mountPath: /data}
+            - {name: tmp, mountPath: /tmp}
+      volumes:
+        - name: data
+          persistentVolumeClaim: {claimName: control-data}
+        - name: tmp
+          emptyDir: {sizeLimit: 64Mi}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api
+spec:
+  type: ClusterIP
+  selector: {app: control-api}
+  ports: [{name: http, port: 8000, targetPort: http}]

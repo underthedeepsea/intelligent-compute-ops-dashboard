@@ -1,0 +1,17 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: ai-ops
+resources:
+  - namespace.yaml
+  - configmap.yaml
+  - storage.yaml
+  - api.yaml
+  - web.yaml
+images:
+  - name: control-api
+    newName: registry.example.invalid/control/control-api
+    newTag: 0.2.0
+  - name: control-web
+    newName: registry.example.invalid/control/control-web
+    newTag: 0.2.0
+# Secret, ingress and maintenance jobs are deliberately applied separately.

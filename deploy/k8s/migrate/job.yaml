@@ -1,0 +1,41 @@
+# Run only after every API/worker/maintenance Pod has exited.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: control-migrate
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 600
+  template:
+    metadata:
+      labels: {app: control-maintenance}
+    spec:
+      restartPolicy: Never
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: migrate
+          image: control-api:0.2.0
+          args: [/bin/sh, -ec, "python manage.py migrate --noinput && python manage.py bootstrap_access"]
+          envFrom:
+            - configMapRef: {name: control-config}
+            - secretRef: {name: control-secrets}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          resources:
+            requests: {cpu: 100m, memory: 128Mi}
+            limits: {cpu: "1", memory: 256Mi}
+          volumeMounts:
+            - {name: data, mountPath: /data}
+            - {name: tmp, mountPath: /tmp}
+      volumes:
+        - name: data
+          persistentVolumeClaim: {claimName: control-data}
+        - name: tmp
+          emptyDir: {sizeLimit: 64Mi}

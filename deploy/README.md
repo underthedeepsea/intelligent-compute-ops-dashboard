@@ -1,4 +1,4 @@
-> 当前 v0.4.1 默认采用纯 HTTP / Web Pod IP:8080 直接访问，无账号、密码、角色、环境授权或管理员初始化。使用下方 HTTP overlay；HTTPS base 仅为可选传输清单。当前合同见 [直接访问设计](../docs/direct-access-design.md)。
+> 当前 v0.5.0 默认采用纯 HTTP / Web Pod IP:8080 直接访问，无账号、密码、角色、环境授权或管理员初始化。使用下方 HTTP overlay；HTTPS base 仅为可选传输清单。当前合同见 [直接访问设计](../docs/direct-access-design.md)。
 
 # Docker 镜像与 Kubernetes NAS 部署
 
@@ -8,11 +8,11 @@
 
 用户环境为 Linux AMD64 K8s，Web Pod IP 可被浏览器/电视访问。使用 **`deploy/k8s/http`**，不要直接把原 HTTPS base 作为 HTTP方案。应用入口为 `http://Web-Pod-IP:8080`；Web转发API的8000，保留集群内 `api` Service 和DNS。无需Ingress、TLS Secret、证书或443/8443应用端口。
 
-此路线与直接访问合同是已发布v0.2.0之后的变更，清单使用 **0.4.1**，必须从包含HTTP改动的源码构建相应镜像，不能使用旧v0.2.0/v0.3.0 API镜像。用户已取消镜像上传，本次不提供公开可拉取的镜像地址。
+此路线与直接访问合同是已发布v0.2.0之后的变更，清单使用 **0.5.0**，必须从包含HTTP改动的源码构建相应镜像，不能使用旧v0.2.0/v0.3.0 API镜像。用户已取消镜像上传，本次不提供公开可拉取的镜像地址。
 
 ```sh
 /path/to/ai-ops-control-plane/deploy/build.sh \
-  --registry registry.example.internal/control --version 0.4.1 --platform linux/amd64
+  --registry registry.example.internal/control --version 0.5.0 --platform linux/amd64
 ```
 
 把部署材料复制到部署专用目录，替换NAS地址/目录、应用与迁移清单的仓库/tag或digest；私有仓库另配置imagePullSecrets。将base/configmap.yaml的`ALLOWED_HOSTS`替换为实际Web Pod IP（或域名），共享http/config/configmap-patch.yaml的CSRF origin改为 `http://实际地址:8080`，不要使用通配符。Pod IP重建后变化时同步配置与访问地址。
@@ -50,10 +50,10 @@ kubectl -n ai-ops get pods -l app=control-web -o wide
 
 ```sh
 /path/to/ai-ops-control-plane/deploy/build.sh \
-  --registry registry.example.internal/control --version 0.4.1 --platform linux/amd64
+  --registry registry.example.internal/control --version 0.5.0 --platform linux/amd64
 # 多平台发布需事先 docker login；脚本不读取或保存凭证。
 /path/to/ai-ops-control-plane/deploy/build.sh \
-  --registry registry.example.internal/control --version 0.4.1 \
+  --registry registry.example.internal/control --version 0.5.0 \
   --platform linux/amd64,linux/arm64 --push
 ```
 
@@ -160,11 +160,11 @@ kubectl -n ai-ops get pods -l app=control-maintenance
 
 成功备份后，按上方状态表处理旧迁移 Job：Complete 可在确认进程退出后清理；Failed 须先保存证据、检查部分迁移状态并修复原因，确认所有进程退出/旧节点隔离后才清理重建；Active/Terminating 继续等待与调查，不并行重建。仅删除已终止的 Job 对象，不删除 PV/PVC，API 始终保持 0，再运行本版本唯一迁移 Job。全部维护结束再 `apply -k base` 恢复一副本。维护期间 Web 可继续展示静态文件，但 API 请求失败；预先安排停机提示，不把这一阶段作为监控数据更新。
 
-### v0.4.0 整项录入的 schema 升级（v0.4.1 沿用）
+### v0.4.0 整项录入的 schema 升级（v0.5.0 沿用）
 
-v0.4.0 新增 `control.0006_endpoint_deployment_configuration`，v0.4.1 沿用此迁移且没有新增迁移，为Endpoint增加Namespace、部署方式、工作负载和多个配置Node字段。迁移不从Pod观测推测配置，也不删除历史成员或绑定；既有缺失配置显示未登记，原样保留时无需补填，编辑该实例时再补齐。
+v0.4.0 新增 `control.0006_endpoint_deployment_configuration`，v0.5.0 沿用此迁移且没有新增迁移，为Endpoint增加Namespace、部署方式、工作负载和多个配置Node字段。迁移不从Pod观测推测配置，也不删除历史成员或绑定；既有缺失配置显示未登记，原样保留时无需补填，编辑该实例时再补齐。
 
-按上述停写、旧版本镜像备份、唯一新迁移Job的顺序执行。使用同一v0.4.1 API镜像的唯一维护进程核对 `python manage.py showmigrations control` 中0006为 `[X]`，并检查日志成功、维护容器全部退出后恢复HTTP API/Web。不能只换前端，否则新录入接口与字段不可用。回滚须遵守下节匹配数据库备份与镜像的流程。
+按上述停写、旧版本镜像备份、唯一新迁移Job的顺序执行。使用同一v0.5.0 API镜像的唯一维护进程核对 `python manage.py showmigrations control` 中0006为 `[X]`，并检查日志成功、维护容器全部退出后恢复HTTP API/Web。不能只换前端，否则新录入接口与字段不可用。回滚须遵守下节匹配数据库备份与镜像的流程。
 
 ## 备份、恢复与回滚
 

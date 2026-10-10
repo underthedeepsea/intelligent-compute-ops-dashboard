@@ -2,7 +2,7 @@ const test=require('node:test'),assert=require('node:assert/strict'),fs=require(
 const e=value=>String(value??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;');
 function render(start='2026-09-26T17:11:03.454664+00:00',end='2026-09-26T17:12:03.454664+00:00'){
  const window={};vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../restored02.js'),'utf8'),{window});
- const x={id:'ep',name:'长名称 " <Endpoint>',role:'PREFILL',metrics:{request_rate:{state:'AVAILABLE',value:987654321.2,unit:'requests/s'},tpot_p95_ms:{state:'AVAILABLE',value:49.3,unit:'ms/token'}},observation:{source_window:{start,end},identity:{model_name:'长模型名'}}};
+ const x={id:'ep',name:'长名称 " <Endpoint>',role:'PREFILL',service_id:'g',metrics:{request_rate:{state:'AVAILABLE',value:987654321.2,unit:'requests/s'},tpot_p95_ms:{state:'AVAILABLE',value:49.3,unit:'ms/token'}},observation:{source_window:{start,end},identity:{model_name:'长模型名'}}};
  const data={items:[{id:'g',name:'g',endpoints:[x]}]};
  const c={state:{},e,m:(n,d)=>Number(n).toFixed(d),catalog:{},endpointState:()=> 'UNKNOWN',ageState:()=> 'STALE',stateLabel:x=>x,source:()=>`<div class="live-source">来源 UNVERIFIED · 来源已过期 · 巡检链路 DEMO_OFFLINE<br>来源窗口 ${e(start)} ～ ${e(end)} · 原始 Endpoint 口径</div>`};
  return window.ScreenRenderers['02'].render(data,c);

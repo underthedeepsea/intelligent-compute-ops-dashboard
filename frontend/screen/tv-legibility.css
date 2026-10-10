@@ -1,0 +1,116 @@
+/* TV text scale: selectors remain inside the screen or portal that owns them. */
+body[data-screen] .app-nav a,body[data-screen] .header-button{font-size:18px}
+body[data-screen] .app-bar{gap:18px}
+body[data-screen] .app-brand strong{font-size:20px}
+body[data-screen] .header-actions .snapshot{font-size:16px}
+body[data-screen] .app-nav{gap:5px}
+body[data-screen] .app-nav a{padding:10px 12px}
+body[data-screen] .app-footer,body[data-screen] #app-footer{font-size:16px}
+body[data-screen] .state,body[data-screen] .live-source{font-size:16px}
+.portal-bar .portal-nav button,.portal-bar .portal-actions button,.portal-bar .portal-actions a{font-size:16px}
+.portal-bar .portal-actions{gap:10px}
+.portal-bar .demo-label,.portal-bar #countdown,.portal-bar #critical-watch-count{font-size:14px}
+body[data-screen="01"] .overview-counts{font-size:18px}
+body[data-screen="01"] .overview-counts small,body[data-screen="01"] .overview-directory span{font-size:16px}
+body[data-screen="01"] .overview-directory strong{font-size:30px}
+body[data-screen="01"] .overview-device>button{font-size:18px;display:block;white-space:normal;overflow:visible}
+body[data-screen="01"] .overview-device small,body[data-screen="01"] .overview-endpoint,body[data-screen="01"] .overview-endpoint small,body[data-screen="01"] .overview-endpoint a{font-size:16px}
+body[data-screen="01"] .overview-name-detail,body[data-screen="01"] .overview-name-detail small,body[data-screen="01"] .overview-topology-foot,body[data-screen="01"] .overview-pager{font-size:16px}
+body[data-screen="01"] .panel-title{font-size:18px}
+body[data-screen="01"] .metric-label,body[data-screen="01"] .metric-unit,body[data-screen="01"] .mini-label{font-size:16px}
+body[data-screen="02"] .restored-pd .pd-workspace{grid-template-columns:340px minmax(0,1fr);gap:16px}
+body[data-screen="02"] .restored-pd .pd-focus{grid-template-rows:145px minmax(0,1fr) 225px}
+body[data-screen="02"] .restored-pd .pd-focus-head{grid-template-columns:minmax(0,1.1fr) 190px minmax(0,1.15fr);padding:14px 20px;gap:14px}
+body[data-screen="02"] .restored-pd .pd-focus-name h2{font-size:26px;line-height:1.2}
+body[data-screen="02"] .restored-pd .pd-focus-identity>p{font-size:16px;margin-top:4px;line-height:1.3}
+body[data-screen="02"] .restored-pd .pd-focus-location,body[data-screen="02"] .restored-pd .pd-focus-location>span,body[data-screen="02"] .restored-pd .pd-head-endpoint,body[data-screen="02"] .restored-pd .pd-head-metrics label,body[data-screen="02"] .restored-pd .pd-head-metrics small,body[data-screen="02"] .restored-pd .pd-load-hero span{font-size:16px}
+body[data-screen="02"] .restored-pd .pd-load-hero b{font-size:18px}
+body[data-screen="02"] .restored-pd .pd-fleet{padding:18px 14px 0}
+body[data-screen="02"] .restored-pd .pd-fleet-heading{margin-bottom:14px;gap:8px;align-items:baseline;flex-wrap:wrap}
+body[data-screen="02"] .restored-pd .pd-fleet-heading>span{font-size:16px}
+body[data-screen="02"] .restored-pd .pd-cluster{grid-template-rows:auto auto auto;gap:7px;padding:12px;align-content:center}
+body[data-screen="02"] .restored-pd .pd-cluster-main strong{font-size:20px;white-space:normal;line-height:1.3}
+body[data-screen="02"] .restored-pd .pd-cluster-business,body[data-screen="02"] .restored-pd .pd-cluster-members{font-size:16px;line-height:1.3;white-space:normal}
+body[data-screen="02"] .restored-pd .pd-fleet-tools input,body[data-screen="02"] .restored-pd .pd-fleet-tools button,body[data-screen="02"] .restored-pd .pd-regions select,body[data-screen="02"] .restored-pd .pd-fleet-pager,body[data-screen="02"] .restored-pd .pd-fleet-pager #pd-cycle{font-size:16px}
+body[data-screen="02"] .restored-pd .pd-engine{padding:16px 14px 0}
+body[data-screen="02"] .restored-pd .pd-engine-body{grid-template-columns:minmax(0,1fr) 200px minmax(0,1fr);margin-top:12px}
+body[data-screen="02"] .restored-pd .pd-engine-body.pd-combined-body{grid-template-columns:minmax(0,1fr)}
+body[data-screen="02"] .restored-pd .pd-engine-heading h3>span,body[data-screen="02"] .restored-pd .pd-router-label,body[data-screen="02"] .restored-pd .pd-router-strip select,body[data-screen="02"] .restored-pd .pd-engine-tools select{font-size:16px}
+body[data-screen="02"] .restored-pd .pd-router-strip{display:flex;gap:8px;align-items:center;max-width:340px}
+body[data-screen="02"] .restored-pd .pd-router-strip select{max-width:220px;color:#bbd7dc;background:#102533;border:1px solid #2a4758}
+body[data-screen="02"] .restored-pd .pd-bank{padding:12px 10px 0}
+body[data-screen="02"] .restored-pd .pd-worker-field{gap:12px;margin:10px 0 8px}
+body[data-screen="02"] .restored-pd .pd-worker{display:flex;flex-direction:column;justify-content:center;align-items:stretch;padding:7px;gap:5px;overflow:visible}
+body[data-screen="02"] .restored-pd .pd-worker .pd-worker-owner{font-size:18px;line-height:1.2;white-space:normal;overflow:visible}
+body[data-screen="02"] .restored-pd .pd-worker-owner>span{display:block;overflow:visible;overflow-wrap:anywhere}
+body[data-screen="02"] .restored-pd .pd-worker-reading{flex-wrap:wrap;gap:3px}
+body[data-screen="02"] .restored-pd .pd-worker-reading b{font-size:24px;line-height:1.1}
+body[data-screen="02"] .restored-pd .pd-worker-reading b small,body[data-screen="02"] .restored-pd .pd-worker-name{font-size:16px}
+body[data-screen="02"] .restored-pd .pd-stage-name p,body[data-screen="02"] .restored-pd .pd-stage-name h3 small,body[data-screen="02"] .restored-pd .pd-bank-footer,body[data-screen="02"] .restored-pd .pd-bank-footer small,body[data-screen="02"] .restored-pd .pd-unavailable{font-size:16px}
+body[data-screen="02"] .restored-pd .pd-registered-relation{padding:0 5px}
+body[data-screen="02"] .restored-pd .pd-registered-relation .pd-route-title{padding:8px 6px}
+body[data-screen="02"] .restored-pd .pd-registered-relation .pd-route-title>span,body[data-screen="02"] .restored-pd .pd-registered-relation .pd-route-title small,body[data-screen="02"] .restored-pd .pd-registered-relation .pd-transfer-metrics>span,body[data-screen="02"] .restored-pd .pd-registered-relation .pd-transfer-metrics p{font-size:16px}
+body[data-screen="02"] .restored-pd .pd-registered-relation .pd-transfer-metrics{padding:7px}
+body[data-screen="02"] .restored-pd .pd-route-caption{height:45px;font-size:16px}
+body[data-screen="02"] .restored-pd .pd-route-caption select,body[data-screen="02"] .restored-pd .pd-route-caption button{font-size:16px}
+body[data-screen="02"] .restored-pd .pd-full-endpoint{font-size:18px;line-height:1.3}
+body[data-screen="02"] .restored-pd .pd-bottom .pd-inspector-model{font-size:16px;white-space:normal;overflow:visible}
+body[data-screen="02"] .restored-pd .pd-bottom .pd-endpoint-source .live-source{font-size:16px;line-height:1.3}
+body[data-screen="02"] .restored-pd .pd-bottom small,body[data-screen="02"] .restored-pd .pd-bottom .pd-latency-title>span{font-size:16px}
+body[data-screen="03"] .restored-faults .rf-stat-note,body[data-screen="04"] .restored-faults .rf-stat-note{font-size:16px}
+body[data-screen="03"] .restored-faults .f-stat>span,body[data-screen="04"] .restored-faults .f-stat>span{font-size:18px}
+body[data-screen="03"] .restored-faults .f-coverage span,body[data-screen="04"] .restored-faults .f-coverage span,body[data-screen="03"] .restored-faults .f-tv-hud p,body[data-screen="04"] .restored-faults .f-tv-hud p{font-size:16px}
+body[data-screen="03"] .restored-faults .f-quiet-status p,body[data-screen="04"] .restored-faults .f-quiet-status p{font-size:20px}
+body[data-screen="03"] .restored-faults .f-ticker,body[data-screen="04"] .restored-faults .f-ticker{font-size:18px}
+body[data-screen="04"] .restored-faults .s-mode,body[data-screen="04"] .restored-faults .rf-directory,body[data-screen="04"] .restored-faults .rf-directory button,body[data-screen="04"] .restored-faults .rf-directory button small{font-size:16px}
+body[data-screen="04"] .restored-faults .f-resource-top,body[data-screen="04"] .restored-faults .f-resource-top small,body[data-screen="04"] .restored-faults .f-priority,body[data-screen="04"] .restored-faults .s-model-line>span,body[data-screen="04"] .restored-faults .s-card-measures span,body[data-screen="04"] .restored-faults .s-card-foot{font-size:16px}
+body[data-screen="04"] .restored-faults .f-detail-identity>span,body[data-screen="04"] .restored-faults .f-detail-identity p,body[data-screen="04"] .restored-faults .f-note,body[data-screen="04"] .restored-faults .f-detail-foot a{font-size:16px}
+body[data-screen="04"] .restored-faults .f-resource-object,body[data-screen="04"] .restored-faults .f-symptom{font-size:18px;white-space:normal;overflow-wrap:anywhere}
+body[data-screen="05"] .w-identity>div>span,body[data-screen="05"] .w-status,body[data-screen="05"] .w-identity p,body[data-screen="05"] .w-rule span,body[data-screen="05"] .w-summary span{font-size:18px}
+body[data-screen="05"] .w-vital em,body[data-screen="05"] .w-vital small,body[data-screen="05"] .w-spark>span,body[data-screen="05"] .w-measures span,body[data-screen="05"] .w-card-foot,body[data-screen="05"] .w-clusters span,body[data-screen="05"] .w-ticker small{font-size:18px}
+body[data-screen="05"] .w-service-deployment{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+body[data-screen="05"] .w-service-deployment small{font-size:16px;color:#9ebbc6}
+body[data-screen="05"] .w-card-foot{gap:12px;line-height:1.5}
+body[data-screen="05"] .w-measures b{font-size:24px}
+body[data-screen="01"] .overview-empty,body[data-screen="01"] .overview-gpu .overview-empty,body[data-screen="01"] .overview-model .overview-empty,body[data-screen="01"] .overview-empty small,body[data-screen="01"] .overview-gpu .overview-empty small{font-size:16px}
+body[data-screen="01"] .overview-counts span,body[data-screen="01"] .overview-topology-head p,body[data-screen="01"] .overview-topology-head>div>span,body[data-screen="01"] .overview-topology-tools,body[data-screen="01"] .overview-topology-tools select,body[data-screen="01"] .overview-service>span,body[data-screen="01"] .overview-service>small,body[data-screen="01"] .overview-service>a,body[data-screen="01"] .overview-group-count,body[data-screen="01"] .overview-cluster-node>span,body[data-screen="01"] .overview-cluster-node small,body[data-screen="01"] .overview-endpoint>div{font-size:16px}
+body[data-screen="01"] .overview-service>button,body[data-screen="01"] .overview-endpoint>button{font-size:18px;display:block;overflow:visible}
+body[data-screen="01"] .overview-service>small,body[data-screen="01"] .overview-device small{white-space:normal;overflow-wrap:anywhere;overflow:visible}
+body[data-screen="01"] .overview-left{grid-template-rows:140fr 190fr 300fr 142fr}
+body[data-screen="02"] .restored-pd .pd-focus-head{grid-template-columns:minmax(0,1fr) 265px minmax(0,1.25fr)}
+body[data-screen="02"] .restored-pd .pd-cluster-business{display:block}
+body[data-screen="02"] .restored-pd .pd-cluster-list{grid-auto-rows:minmax(114px,auto);grid-template-rows:none;align-content:start}
+body[data-screen="03"] .restored-faults .f-stat small,body[data-screen="04"] .restored-faults .f-stat small{font-size:16px}
+body[data-screen="05"] .w-grid{grid-template-rows:none;grid-auto-rows:max-content;align-content:start}
+body[data-screen="05"] .w-card{min-height:420px;overflow:visible}
+body[data-screen="05"] .w-card-foot>span{overflow:visible}
+body[data-screen="05"] .w-card-foot .w-service-deployment{width:100%;justify-content:space-between}
+body[data-screen="05"] .w-service-deployment a{margin-left:0}
+/* Compact structural spacing leaves room for full names at 12 cards per bank. */
+body[data-screen="02"] .restored-pd{grid-template-rows:36px minmax(0,1fr);gap:12px}
+body[data-screen="02"] .restored-pd .pd-focus{grid-template-rows:126px minmax(0,1fr) 225px;gap:12px}
+body[data-screen="02"] .restored-pd .pd-engine{padding-top:12px}
+body[data-screen="02"] .restored-pd .pd-engine-heading h3{font-size:21px;white-space:nowrap}
+body[data-screen="02"] .restored-pd .pd-engine-heading h3>span{display:inline;margin:0 0 0 12px}
+body[data-screen="02"] .restored-pd .pd-bank-heading{min-height:41px}
+body[data-screen="02"] .restored-pd .pd-stage-name>div{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+body[data-screen="02"] .restored-pd .pd-stage-name p{margin:0}
+body[data-screen="02"] .restored-pd .pd-bank-footer{height:28px}
+body[data-screen="02"] .restored-pd .pd-route-caption{height:39px}
+body[data-screen="02"] .restored-pd .pd-worker{padding:4px 7px;gap:3px}
+body[data-screen="02"] .restored-pd .pd-worker .pd-worker-owner{line-height:1.15}
+body[data-screen="02"] .restored-pd .pd-worker-reading{flex-shrink:0}
+body[data-screen="04"] .restored-faults{grid-template-rows:78px 120px minmax(0,1fr) 48px;gap:12px}
+body[data-screen="04"] .restored-faults .f-stats{padding-top:18px;padding-bottom:18px}
+body[data-screen="04"] .restored-faults .s-model-line{gap:2px;margin-bottom:3px}
+body[data-screen="04"] .restored-faults .s-model-line strong{font-size:18px;white-space:normal}
+body[data-screen="04"] .restored-faults .f-resource-object,body[data-screen="04"] .restored-faults .f-symptom{line-height:1.2;margin-bottom:4px}
+body[data-screen="04"] .restored-faults .s-card-measures>span{gap:3px}
+body[data-screen="04"] .restored-faults .s-card-foot{margin-top:3px;font-size:16px;line-height:1.2}
+body[data-screen="04"] .restored-faults .s-card-foot b,body[data-screen="04"] .restored-faults .f-signals span,body[data-screen="04"] .restored-faults .f-signals small,body[data-screen="04"] .restored-faults .f-deck-footer,body[data-screen="04"] .restored-faults .f-registry-foot,body[data-screen="04"] .restored-faults .f-registry-head span{font-size:16px}
+body[data-screen="04"] .restored-faults.has-faults .rf-directory{left:calc(50% - 230px);top:0;bottom:auto}
+body[data-screen="04"] .restored-faults.has-faults .rf-directory>div{top:34px;bottom:auto}
+body[data-screen="02"] .restored-pd .pd-router-strip{width:340px;min-width:0}
+body[data-screen="02"] .restored-pd .pd-router-label{flex:none;white-space:nowrap}
+body[data-screen="02"] .restored-pd .pd-router-strip select{flex:1 1 140px;min-width:0;width:140px}
+body[data-screen="02"] .restored-pd .pd-engine-tools{flex:none}

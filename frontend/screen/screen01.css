@@ -2,3 +2,8 @@ body[data-screen="01"] .screen{width:1920px;height:1080px;padding:20px 30px 12px
 
 
 body[data-screen="01"] .overview-device>button{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;overflow-wrap:anywhere;font-size:13px;line-height:1.4;text-align:left;padding:0;color:#b5c9d0}
+
+/* The portal owns screen identity; preserve directory counts inside the content. */
+body[data-screen="01"].screen-embedded .overview-page-title{display:none}
+body[data-screen="01"].screen-embedded .overview-page{grid-template-rows:64px minmax(0,1fr);gap:12px}
+body[data-screen="01"].screen-embedded .overview-heading{justify-content:flex-end}

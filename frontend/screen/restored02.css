@@ -158,3 +158,21 @@ body[data-screen="02"] .restored-pd .pd-registered-relation .pd-transfer-metrics
  body[data-screen="02"] .restored-pd .pd-registered-relation{height:380px;flex-direction:column;padding:0 20px}
  body[data-screen="02"] .restored-pd .pd-registered-relation .pd-transfer-lines{inset:105px 0 108px;height:calc(100% - 213px)}
 }
+
+/* Fixed decorative curves stay inside the center column; no Endpoint geometry or route semantics. */
+body[data-screen="02"] .restored-pd .pd-registered-relation{overflow:hidden}
+body[data-screen="02"] .restored-pd .pd-central-art{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;overflow:hidden}
+body[data-screen="02"] .restored-pd .pd-central-art .pd-flow-track{fill:none;stroke:#326775;stroke-width:1.4;vector-effect:non-scaling-stroke}
+body[data-screen="02"] .restored-pd .pd-central-art .pd-relation-packet{stroke:#71cabe;stroke-width:2;stroke-dasharray:9 91;opacity:.65;animation-duration:8s;vector-effect:non-scaling-stroke}
+body[data-screen="02"] .restored-pd .pd-route-title,body[data-screen="02"] .restored-pd .pd-transfer-metrics,body[data-screen="02"] .restored-pd .pd-relation-node{z-index:1}
+body[data-screen="02"] .restored-pd .pd-combined-body{grid-template-columns:minmax(0,1fr)}
+body[data-screen="02"] .restored-pd .pd-bank-combined{--stage-color:#77c9db;--stage-edge:#367786;--stage-bg:#12343f;background:linear-gradient(180deg,#14394155,transparent)}
+body[data-screen="02"] .restored-pd .pd-full-endpoint{display:block;overflow-wrap:anywhere;color:#cce6e7}
+body[data-screen="02"] .restored-pd .pd-worker-reading{display:flex;align-items:baseline;justify-content:space-between;gap:6px;min-width:0}
+body[data-screen="02"] .restored-pd .pd-worker-reading>b{color:var(--stage-color);white-space:nowrap}
+body[data-screen="02"] .restored-pd .pd-route-caption>span{display:flex;gap:12px}
+body[data-screen="02"] .restored-pd .pd-route-caption button{color:#adc4cb;white-space:nowrap}
+body[data-screen="02"] .restored-pd .pd-cluster-members{color:#8daab7;overflow-wrap:anywhere}
+body[data-screen="02"] .restored-pd .pd-focus-clusters{color:#91afbd;overflow-wrap:anywhere}
+body[data-screen="02"] .restored-pd .pd-combined-note,body[data-screen="02"] .restored-pd .pd-relation-incomplete{color:#90adb7}
+body[data-screen="02"].motion-paused .pd-relation-packet,body[data-screen="02"].motion-paused .pd-relation-node>i,body[data-screen="02"].visibility-paused .pd-relation-packet,body[data-screen="02"].visibility-paused .pd-relation-node>i{animation-play-state:paused!important}

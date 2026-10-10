@@ -20,7 +20,7 @@
 | AI Gateway Console | 团队、业务、模型、服务、授权引用与运行成员目录 |
 | 手动监控数据导入 | 按集群导入推理与硬件 CSV 快照，用于尚未接通巡检的演示 |
 
-目录关系不代表真实调用、运行健康或网络流量。未接入、未知与过期状态单独显示，不用零值替代缺失数据。没有真实采集器时，离线样本明确标记为演示、未验证或过期。
+目录关系不代表真实调用、运行健康或网络流量。未接入、未知与过期状态单独显示，不用零值替代缺失数据。正常 API 的离线样本保持未验证与过期标识。显式展示模式使用合成快照及 SZF机房展示别名，见下方说明。
 
 ## 本地启动
 
@@ -89,7 +89,7 @@ API/Web 分别构建为独立镜像，包含前端和 CSV 模板。镜像构建�
 
 旧版本的页面强制要求登录会话；v0.2 还固定使用 Secure Cookie，普通 HTTP 无法维持该会话。**v0.4.0 已取消项目内鉴权，不能靠配置旧镜像消除该提示。**
 
-从本仓库 v0.4.1 源码构建匹配的 Linux AMD64 API/Web 镜像，按 [升级步骤](deploy/README.md) 停止 API、备份原数据库、串行迁移（确认 `control.0006_endpoint_deployment_configuration` 为已应用），再启动同版本 API 和 Web。无需删除数据库、创建账号或执行 `bootstrap_access`。浏览器刷新后确认 `service-entry.js?v=service-entry-visual-v3` 已加载，并检查 `/api/v1/session` 返回 `access_mode: "direct"`；该兼容路径只提供访问元数据和 CSRF，不建立登录会话。
+从本仓库 v0.5.0 源码构建匹配的 Linux AMD64 API/Web 镜像，按 [升级步骤](deploy/README.md) 停止 API、备份原数据库、串行迁移（确认 `control.0006_endpoint_deployment_configuration` 为已应用），再启动同版本 API 和 Web。无需删除数据库、创建账号或执行 `bootstrap_access`。浏览器刷新后确认 `service-entry.js?v=service-entry-visual-v3` 已加载，并检查 `/api/v1/session` 返回 `access_mode: "direct"`；该兼容路径只提供访问元数据和 CSRF，不建立登录会话。
 
 本次只发布源码、tag 和 release，未上传容器镜像。不要继续运行0.2.0/0.3.0镜像，也不要把本地 ARM 镜像用于 x86 服务器。
 
@@ -124,3 +124,13 @@ docs/                    目录录入、监控与上线检查说明
 资源录入已统一为 Gateway 的白灰橙配色，采用紧凑资料网格、业务关联行与部署实例网格。配置节点支持多个 Node：空配置默认收起，已有节点默认展开。直接录入、批量导入及已录入服务目录的字段和操作保持完整。
 
 本次为展示更新，没有新增数据库迁移。v0.4.0 已完成 `control.0006_endpoint_deployment_configuration` 的部署可按原停写升级流程更新同版本 API/Web 镜像；由更早版本升级仍须执行既有迁移步骤。页面加载后确认 `service-entry.css` 与 `service-entry.js` 均使用 `v=service-entry-visual-v3`。本地 16 项原有单元测试、隔离数据库保存／编辑验收和独立审查通过；生产 NAS/K8s 与 Linux AMD64 镜像仍需现场验收。
+
+## v0.5.0 完整五屏与 SZF 展示
+
+启动服务后访问 `/screen/?demo=1&screen=01`，可查看五屏的完整合成快照：多 P/D、合并推理、基础设施异常、服务影响和关键应用 SLI。界面使用“SZF机房 / PRD”展示名称，数据仍由静态 `frontend/screen/demo-data.js` 提供，不代表真实机房接入；内部来源与身份保留。详见 [SZF 展示说明](docs/szf-screen-presentation.md)。
+
+02 中央六条固定曲线仅为装饰，与实例数量和卡片坐标无关，保留暂停、动效关闭与减少动态效果支持。请求槽位占用由占用槽位/有效容量计算，P/D 组取两阶段较大值；该口径不能当成 K8s 集群或 GPU 利用率。普通入口 `/screen/` 继续读取 Gateway 同一后台配置，缺失指标仍显示未接入，API 失败不会回退到合成数据。
+
+Gateway 的“资源录入 → 直接录入”选择“P / D 分离”后，用“＋ PREFILL 实例”和“＋ DECODE 实例”分别登记多个 P 和 D；数量按启用的 Endpoint 条目统计。选择“合并推理”时使用“＋ 合并实例”。这是登记工作负载对应的实例信息，不是填写 Pod 名或设置工作负载副本数。同一业务可关联两种部署模式的服务；单个服务当前仅选择一种模式。修改已保存信息使用“已录入服务目录 → 整项编辑 / 历史”。
+
+本版无新增数据库迁移，部署 API/Web 镜像标签统一为 0.5.0，沿用停写、备份和 schema 核对步骤。此 Release 发布源码，未构建或上传镜像。

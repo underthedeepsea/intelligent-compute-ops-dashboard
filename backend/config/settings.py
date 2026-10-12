@@ -52,3 +52,8 @@ CSRF_TRUSTED_ORIGINS = [x for x in os.environ.get('CSRF_TRUSTED_ORIGINS','').spl
 # Direct HTTP has no trusted TLS terminator; ignore client-supplied protocol headers.
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https') if CONTROL_TRANSPORT == 'https' else None
 
+# BEGIN SZG8H CATALOG EXTENSION
+INSTALLED_APPS += ['production_scene']
+PRODUCTION_SCENE_DATA_DIR = os.environ.get('PRODUCTION_SCENE_DATA_DIR', str(BASE_DIR.parent / '.local-demo' / 'szg8h'))
+PRODUCTION_SCENE_REPLAY_ENABLED = os.environ.get('PRODUCTION_SCENE_REPLAY_ENABLED', '0') == '1'
+# END SZG8H CATALOG EXTENSION

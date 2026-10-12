@@ -7,8 +7,14 @@ import subprocess
 import sys
 import tempfile
 from django.test import SimpleTestCase
+from unittest import skipUnless
+from production_scene.data_files import data_root
+SEED=data_root()/'legacy/demo/local_preview/seed.py'
+if os.environ.get('PRODUCTION_SCENE_TEST_DATA_REQUIRED')=='1' and not SEED.is_file():
+    raise RuntimeError('Required legacy demo fixture missing')
 
 
+@skipUnless(SEED.is_file(), 'Optional legacy local demo bundle not installed')
 class LocalPreviewSeedTests(SimpleTestCase):
     def test_upgrade_and_idempotency_preserve_existing_records(self):
         root = Path(__file__).resolve().parents[2]
@@ -16,7 +22,7 @@ class LocalPreviewSeedTests(SimpleTestCase):
             temp = Path(directory)
             shutil.copytree(root/'backend', temp/'backend', ignore=shutil.ignore_patterns('*.sqlite3', '*.sqlite3-*', '__pycache__'))
             (temp/'demo/local_preview').mkdir(parents=True)
-            source = (root/'demo/local_preview/seed.py').read_text()
+            source = SEED.read_text()
             seed = temp/'demo/local_preview/seed.py'
             env = {**os.environ, 'CONTROL_LOCAL': '1', 'SQLITE_PATH': str(temp/'backend/local.sqlite3')}
             def run(*args):

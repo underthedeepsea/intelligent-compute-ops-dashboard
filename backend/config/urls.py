@@ -9,3 +9,8 @@ if settings.LOCAL:
         if not path or path.endswith('/'):path+='index.html'
         return serve(request,path,document_root=Path(settings.BASE_DIR).parent/'frontend',show_indexes=False)
     urlpatterns += [re_path(r'^(?P<path>(?:gateway|screen)/.*)$',frontend),path('',frontend,{'path':'screen/index.html'})]
+
+# BEGIN SZG8H CATALOG EXTENSION
+from django.urls import include
+urlpatterns += [path('api/v1/production-scene/', include('production_scene.urls'))]
+# END SZG8H CATALOG EXTENSION

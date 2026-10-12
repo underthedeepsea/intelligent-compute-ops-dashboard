@@ -46,41 +46,18 @@
     }
     return {batch:result,errors};
   }
-  function seed(){
-    const db=empty(),env='demo-local';
-    db.teams=[{code:'dev',name:'研发效能团队',environment:env},{code:'support',name:'智能客服团队',environment:env}];
-    db.businesses=[{code:'coding',name:'代码研发助手',environment:env,team_code:'dev',owner:'研发平台（示例）'},{code:'help',name:'客户服务助手',environment:env,team_code:'support',owner:'客服平台（示例）'}];
-    db.models=[{code:'coder',name:'Qwen3-Coder-30B',environment:env},{code:'qwen',name:'Qwen3-32B',environment:env}];
-    db.clusters=[{code:'southwest',name:'西南智算集群',environment:env,region:'西南'},{code:'east',name:'华东智算集群',environment:env,region:'华东'}];
-    db.services=[{code:'code-service',name:'代码辅助推理',environment:env,model_code:'coder',deployment_mode:'SPLIT_PD'},{code:'help-service',name:'客服问答推理',environment:env,model_code:'qwen',deployment_mode:'COMBINED'}];
-    db.pdgroups=[{code:'code-pd',name:'代码推理 P/D 组',environment:env,service_code:'code-service'}];
-    db.endpoints=[{code:'demo-coding-p',name:'代码推理 · P',service_code:'code-service',cluster_code:'southwest',pd_group_code:'code-pd',role:'PREFILL',address_ref:'demo-only:coding:p',environment:env},{code:'demo-coding-d',name:'代码推理 · D',service_code:'code-service',cluster_code:'southwest',pd_group_code:'code-pd',role:'DECODE',address_ref:'demo-only:coding:d',environment:env},{code:'demo-help-c',name:'客服推理 · 合并',service_code:'help-service',cluster_code:'east',role:'COMBINED',address_ref:'demo-only:help:c',environment:env}];
-    db.runtimes=db.endpoints.map(row=>({code:row.code+'-pod',name:row.name+' Pod',environment:env,endpoint_code:row.code,namespace:'demo-inference',pod_name:row.code+'-0',workload_ref:'statefulset/'+row.code}));
-    db.keys=[{code:'coding-ref',name:'研发助手调用引用',environment:env,team_code:'dev',business_code:'coding',external_key_ref:'demo-only:external:0003',masked_label:'demo-••••-0003',desired_status:'ACTIVE'},{code:'support-ref',name:'客服调用引用',environment:env,team_code:'support',business_code:'help',external_key_ref:'demo-only:external:0001',masked_label:'demo-••••-0001',desired_status:'ACTIVE'}];
-    db.dependencies=[{business_code:'coding',service_code:'code-service'},{business_code:'help',service_code:'help-service'}];
-    db.grants=[{key_code:'coding-ref',model_code:'coder'},{key_code:'support-ref',model_code:'qwen'}];
-    return Object.fromEntries(order.map(type=>[type,db[type].map(row=>({...normalize(type,row),_source:'合成示例'}))]));
+  let sampleData=null;
+  function setSamples(data){
+    if(!data||!order.every(type=>Array.isArray(data.seed?.[type])&&Array.isArray(data.batch?.[type])))throw Error('本地示例目录格式无效');
+    sampleData=structuredClone(data);
   }
+  function seed(){return sampleData?structuredClone(sampleData.seed):empty();}
   function examples(batchPrefix='batch'){
-    const db=empty(),env='demo-local';
-    ['a','b'].forEach((suffix,index)=>{
-      const prefix=batchPrefix+'-'+suffix,label=index===0?'研发知识检索':'工单问答助手';
-      db.teams.push({code:prefix+'-team',name:label+'团队',environment:env});
-      db.businesses.push({code:prefix+'-business',name:label,environment:env,team_code:prefix+'-team',owner:'示例负责人'});
-      db.models.push({code:prefix+'-model',name:index===0?'示例知识模型':'示例问答模型',environment:env});
-      db.services.push({code:prefix+'-service',name:label+'推理',environment:env,model_code:prefix+'-model',deployment_mode:'SPLIT_PD'});
-      db.pdgroups.push({code:prefix+'-pd',name:label+' P/D 组',environment:env,service_code:prefix+'-service'});
-      ['p','d1','d2'].forEach((role,i)=>{
-        const code=prefix+'-'+role;
-        db.endpoints.push({code,name:label+' · '+role.toUpperCase(),environment:env,service_code:prefix+'-service',cluster_code:index===0?'southwest':'east',pd_group_code:prefix+'-pd',role:i===0?'PREFILL':'DECODE',address_ref:'demo-only:'+prefix+':'+role,namespace:'demo-inference',workload_kind:'LWS',workload_ref:code,configured_nodes:['demo-node-'+suffix+'-1','demo-node-'+suffix+'-2']});
-      });
-      db.keys.push({code:prefix+'-key',name:label+'调用引用',environment:env,team_code:prefix+'-team',business_code:prefix+'-business',external_key_ref:'demo-only:'+prefix+':external',masked_label:'demo-••••-batch-'+suffix,desired_status:'ACTIVE'});
-      db.dependencies.push({business_code:prefix+'-business',service_code:prefix+'-service'});
-      db.grants.push({key_code:prefix+'-key',model_code:prefix+'-model'});
-    });
-    db.clusters=[{code:batchPrefix+'-cluster',name:'新增演示集群',environment:env,region:'演示区域'}];
-    return db;
+    if(!sampleData)throw Error('请先安装本地演示包并恢复旧版样本');
+    const replace=value=>typeof value==='string'?value.replaceAll('__batch__',batchPrefix):Array.isArray(value)?value.map(replace):value&&typeof value==='object'?Object.fromEntries(Object.entries(value).map(([k,v])=>[k,replace(v)])):value;
+    return replace(sampleData.batch);
   }
+  function draftExample(){return sampleData?structuredClone(sampleData.draft):null;}
   function parseCSV(text){
     if(text.length>2*1024*1024)throw Error('CSV 超过 2 MB，请拆分为较小批次。');
     text=text.replace(/^\uFEFF/,'');const rows=[];let row=[],cell='',quoted=false,afterQuote=false,line=1,rowLine=1;
@@ -250,6 +227,6 @@
     }
     return rows;
   }
-  const api={isUuid,inputFields,importOrder,displayValue,cloneDb,nodeList,forbiddenInput,resolveImports,newId,environments,environmentCode,isAddress,schemas,order,empty,identity,normalize,seed,examples,parseCSV,decode,encode,validateBatch,prepareUpdate,prepareServiceUpdate,mappings};
+  const api={isUuid,inputFields,importOrder,displayValue,cloneDb,nodeList,forbiddenInput,resolveImports,newId,environments,environmentCode,isAddress,schemas,order,empty,identity,normalize,setSamples,draftExample,seed,examples,parseCSV,decode,encode,validateBatch,prepareUpdate,prepareServiceUpdate,mappings};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.GatewayDirectoryCore=api;
 })(typeof window!=='undefined'?window:globalThis);

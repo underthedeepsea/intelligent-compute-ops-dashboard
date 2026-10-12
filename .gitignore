@@ -18,3 +18,16 @@ worklogs/
 *.pid
 playwright-report/
 test-results/
+
+# Local demo payloads are delivered separately from source.
+.local-demo/
+.szg8h-backups/
+backend/production_scene/data/
+demo/local_preview/
+frontend/screen/demo-data.js
+prototypes/gateway-entry-flow/demo-samples.json
+docs/screenshots/
+docs/production-szg8h/catalog-normalized.json
+docs/production-szg8h/scenario-manifest.json
+docs/production-szg8h/DATA_COVERAGE.json
+docs/production-szg8h/repository-evidence.json

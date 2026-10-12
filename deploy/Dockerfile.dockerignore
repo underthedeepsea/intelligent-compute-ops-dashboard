@@ -25,3 +25,6 @@
 **/*.key
 **/.DS_Store
 backend/staticfiles/**
+backend/production_scene/data/**
+frontend/screen/demo-data.js
+**/.local-demo/**

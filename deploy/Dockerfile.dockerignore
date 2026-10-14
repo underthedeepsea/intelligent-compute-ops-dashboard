@@ -28,3 +28,8 @@ backend/staticfiles/**
 backend/production_scene/data/**
 frontend/screen/demo-data.js
 **/.local-demo/**
+
+**/AGENTS.md
+**/CODEX_TASK.md
+**/DESIGN_SPEC.md
+**/SOURCE_MANIFEST.json

@@ -53,6 +53,12 @@ def validate_bundle(path):
     from .coverage_core import check_dataset
     from .recovery_core import compile_plan
     packet = json.loads(payload['production-catalog.json'])
+    if packet.get('normalization_version') == 4 or manifest.get('scene_version') == 'szg8h.4':
+        if not {'legacy/production-catalog-v3.json','legacy/escape-policy-v3.json'}.issubset(listed):
+            raise ValueError('v4 演示包缺少旧目录纠正的校验文件')
+    if manifest.get('scene_version') == 'szg8h.5':
+        if not {'legacy/production-catalog-v3.json','legacy/escape-policy-v3.json','legacy/production-catalog-v4.json','legacy/escape-policy-v4.json'}.issubset(listed):
+            raise ValueError('v5 演示包缺少旧目录修订的校验文件')
     catalog = compile_catalog(packet)
     policy = json.loads(payload['escape-policy.json'])
     plan = compile_plan(policy, catalog['catalog'])

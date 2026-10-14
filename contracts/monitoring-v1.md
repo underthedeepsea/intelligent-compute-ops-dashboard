@@ -1,6 +1,6 @@
 # Monitoring v1 implementation contract
 
-Scope: per cluster, separate persistent CSV snapshot from inspection cache. Current API envelope/schema_version 1.0 preserved; API paths under /api/v1/monitoring/. Anonymous direct access reads and writes all registered environments; templates are directly available. CSRF and entity environment consistency remain. See [direct access](../docs/direct-access-design.md).
+Scope: per cluster, separate persistent CSV snapshot from inspection cache. Current API envelope/schema_version 1.0 preserved; API paths under /api/v1/monitoring/. Anonymous direct access reads and writes all registered environments; templates are directly available. CSRF and entity environment consistency remain. See [direct access](../README.md).
 
 ## HTTP
 

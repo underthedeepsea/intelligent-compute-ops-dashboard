@@ -2,7 +2,12 @@
 Rules here apply only to this scenario. They are NOT inspection thresholds.
 """
 from __future__ import annotations
+import math
+import json
+from pathlib import Path
 from .recovery_core import compile_plan,attach_plans
+from .hardware_core import host_context
+from .scene_rules import evaluate_window
 from datetime import datetime, timedelta, timezone
 from .catalog_core import compile_catalog, identity, digest, business_contains_endpoint
 
@@ -18,9 +23,10 @@ RULES={
  'HOST_MEM':{'key':'memory_usage_ratio','warning':.90,'critical':.96,'label':'主机内存压力','kind':'HOST'},
  'HOST_FS':{'key':'filesystem_usage_ratio','warning':.90,'critical':.97,'label':'文件系统空间压力','kind':'HOST'}
 }
-for k,r in RULES.items():r.update(id='SCENE.'+k,version='1.0',comparison='>=',confirm_windows=2,recover_windows=3,origin='SYNTHETIC')
+for k,r in RULES.items():r.update(id='SCENE.'+k,version='1.1',comparison='>=',confirm_windows=2,recover_windows=3,origin='SYNTHETIC')
 
 def iso(t):return t.isoformat(timespec='seconds')
+
 
 def frame(dataset, step):
     if type(step) is not int or not 0<=step<dataset['steps']:raise ValueError('step 超出 0–959')
@@ -34,7 +40,7 @@ def frame(dataset, step):
         for hit in row['hits']:
             rule=dataset['rules'][hit['rule']]
             findings.append({**rule,**hit,'rule_id':rule['id'],'observed_value':hit['value'],'threshold':rule['critical'] if hit['level']=='CRITICAL' else rule['warning'],'first_seen':iso(datetime.fromisoformat(dataset['start'])+timedelta(seconds=hit['first_step']*30)),'source_window':observation['source_window'],'revalidation_state':'RECOVERING' if hit['clear'] else 'ACTIVE'})
-        return {**item,'status':row['s'],'data_state':row['q'],'metrics':metrics,'observation':observation,'findings':findings}
+        return {**item,**host_context(item,cat),'pending_confirmation':row.get('pending_confirmation',False),'status':row['s'],'data_state':row['q'],'metrics':metrics,'observation':observation,'findings':findings}
     for item,row in zip(cat['endpoints'],sample['e']):eps.append(decorate(item,row,dataset['endpoint_metrics'],'ENDPOINT'))
     for node,row in zip(dataset['nodes'],sample['h']):
         item={'id':dataset['host_ids'][node],'name':node,'host_id':node,'resource_type':'HOST','node_name':node,'cluster_id':cat['clusters'][0]['id'],'environment_code':cat['clusters'][0]['environment_code']}
@@ -47,5 +53,5 @@ def frame(dataset, step):
         recovery_deps=[{**s,'endpoints':[e for e in s['endpoints'] if e['pd_group_id'] in targets]} for s in services if any(e['pd_group_id'] in targets for e in s['endpoints'])]
         apps.append({**b,'business_observed_status':'UNKNOWN','dependency_services':deps,'recovery_dependencies':recovery_deps,'metrics':{},'series':[]})
     coverage={'configured':len(eps),'bound':len(eps),'verified':0,'fresh':0,'replay_valid':sum(e['data_state']=='REPLAY' for e in eps)}
-    base={'source_type':'SCENARIO','data_state':'REPLAY','source_window':{'start':iso(start),'end':iso(end)},'coverage':coverage,'summary':{k:dataset['counts'][k] for k in ['clusters','services','endpoints','businesses']},'scene':{'id':'szg-8h','step':step,'origin':'SYNTHETIC'},'hardware':hardware}
+    base={'source_type':'SCENARIO','data_state':'REPLAY','source_window':{'start':iso(start),'end':iso(end)},'coverage':coverage,'summary':{k:dataset['counts'][k] for k in ['clusters','services','endpoints','businesses']},'managed_gpu_hosts':len(cat.get('gpu-hosts',[])),'scene':{'id':'szg-8h','step':step,'origin':'SYNTHETIC'},'hardware':hardware}
     return {'catalog':cat,'now':int(end.timestamp()*1000)+1000,'projections':{kind:{'schema_version':'1.0','view_revision':step+1,'data':{**base,'kind':kind,'items':items}} for kind,items in [('overview',eps),('services',services),('critical-apps',apps)]}}

@@ -29,6 +29,7 @@ class BusinessPDGroupBinding(models.Model):
         constraints=[models.UniqueConstraint(fields=['business','pd_group'],name='scene_unique_business_pd')]
 
 class PodRegistration(models.Model):
+    enabled = models.BooleanField(default=True)
     id = models.UUIDField(primary_key=True,default=uuid.uuid4,editable=False)
     cluster = models.ForeignKey('control.KubernetesCluster',on_delete=models.PROTECT)
     namespace = models.CharField(max_length=120)
@@ -87,3 +88,40 @@ class CatalogCorrection(models.Model):
     content_sha256 = models.CharField(max_length=64)
     payload = models.JSONField()
     corrected_at = models.DateTimeField(auto_now_add=True)
+
+
+class NodeHardware(models.Model):
+    """Optional manually confirmed card label; never inferred from a workload name."""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    cluster = models.ForeignKey('control.KubernetesCluster', on_delete=models.PROTECT)
+    environment_code = models.CharField(max_length=80)
+    node_name = models.CharField(max_length=160)
+    is_gpu_host = models.BooleanField(default=True)
+    gpu_model = models.CharField(max_length=80, blank=True)
+    gpu_model_source = models.CharField(max_length=24, default='UNCONFIRMED')
+    version = models.PositiveIntegerField(default=1)
+    source = models.ForeignKey(CatalogImport, on_delete=models.PROTECT)
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['cluster','node_name'], name='scene_unique_node_hardware')]
+
+
+class NamespaceCorrection(models.Model):
+    """Audit before-image for explicit v4 namespace consolidation. No raw telemetry."""
+    source = models.OneToOneField(CatalogImport, primary_key=True, on_delete=models.PROTECT)
+    from_version = models.PositiveIntegerField()
+    to_version = models.PositiveIntegerField()
+    payload = models.JSONField()
+    content_sha256 = models.CharField(max_length=64)
+    corrected_at = models.DateTimeField(auto_now_add=True)
+
+
+class CatalogRevisionAudit(models.Model):
+    """Before-image of an explicitly confirmed source revision; never telemetry."""
+    source = models.ForeignKey(CatalogImport, on_delete=models.PROTECT)
+    from_version = models.PositiveIntegerField()
+    to_version = models.PositiveIntegerField()
+    payload = models.JSONField()
+    content_sha256 = models.CharField(max_length=64)
+    corrected_at = models.DateTimeField(auto_now_add=True)
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['source','to_version'], name='scene_unique_catalog_revision')]

@@ -1,4 +1,4 @@
-> 当前访问合同以 [v0.4.0直接访问设计](direct-access-design.md) 为准，无账号初始化，HTTP Pod IP:8080直接使用。
+> 当前访问合同以 [v0.4.0直接访问设计](../README.md) 为准，无账号初始化，HTTP Pod IP:8080直接使用。
 
 # 生产部署准备清单：x86 K8s、Pod 外部可达、NAS SQLite
 

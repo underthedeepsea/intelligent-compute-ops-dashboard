@@ -25,7 +25,7 @@ def text(value, label, maximum=240, empty=False):
         raise ValueError(f'{label}: 必须为首尾无空格的有效文本（最长 {maximum}）')
     return value
 
-NORMALIZATION_VERSION = 3
+NORMALIZATION_VERSION = 5
 
 
 def compile_catalog(packet):
@@ -35,8 +35,19 @@ def compile_catalog(packet):
     original row validation. Logical identity is (environment, service, PD name).
     Two namespaces can belong to ONE PD group; they never share metrics or Pod IDs.
     """
-    from .catalog_legacy_v2 import compile_catalog as physical_compile
-    old = physical_compile(packet)
+    from .catalog_physical import compile_catalog as physical_compile
+    if isinstance(packet, dict) and any(r.get('namespace')=='pd-server-dsv5flash-fallback' for r in packet.get('rows',[]) if isinstance(r,dict)):
+        raise ValueError('namespace已由用户确认统一为pd-server-dsv4flash-fallback，请加载本版清单。')
+    raw_packet = deepcopy(packet)
+    clean_packet = deepcopy(packet)
+    for r in clean_packet.get('rows', []):
+        for stage in ('prefill','decode'):
+            part = r.get(stage, {})
+            if 'gpu_model' in part:
+                text(part['gpu_model'], 'gpu_model', 80, True)
+                part.pop('gpu_model')
+    old = physical_compile(clean_packet)
+    old['source_hash'] = digest(raw_packet)
     out = deepcopy(old)
     cat = out['catalog']
     env = out['environment_code']
@@ -112,6 +123,23 @@ def compile_catalog(packet):
     out['counts']['named_pd_groups'] = len(groups)
     out['normalization_version'] = NORMALIZATION_VERSION
     out['legacy_group_map'] = aliases
+    from .hardware_core import catalog_hosts
+    cat['gpu-hosts'] = catalog_hosts(cat)
+    source_cards = {}
+    for r in raw_packet['rows']:
+        for stage in ('prefill','decode'):
+            p = r[stage]
+            if p['node'] and p.get('gpu_model'):
+                key = (r['cluster'],p['node'])
+                if key in source_cards and source_cards[key] != p['gpu_model']:
+                    raise ValueError('同一主机卡型冲突: '+p['node'])
+                source_cards[key] = p['gpu_model']
+    clusters = {c['id']: c['name'] for c in cat['clusters']}
+    for h in cat['gpu-hosts']:
+        model = source_cards.get((clusters[h['cluster_id']],h['node_name']))
+        if model: h.update(gpu_model=model, gpu_model_source='USER_SCREENSHOT')
+    out['issues'].extend(deepcopy(raw_packet.get('source',{}).get('cell_conflicts',[])))
+    out['counts']['managed_gpu_hosts'] = len(cat['gpu-hosts'])
     return out
 
 

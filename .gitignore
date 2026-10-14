@@ -31,3 +31,12 @@ docs/production-szg8h/catalog-normalized.json
 docs/production-szg8h/scenario-manifest.json
 docs/production-szg8h/DATA_COVERAGE.json
 docs/production-szg8h/repository-evidence.json
+
+# Internal specifications are maintained outside public source.
+AGENTS.md
+**/AGENTS.md
+docs/production-szg8h/
+docs/*-design.md
+docs/*-implementation.md
+docs/szf-screen-presentation.md
+SOURCE_MANIFEST.json

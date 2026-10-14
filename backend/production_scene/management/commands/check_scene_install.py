@@ -11,8 +11,8 @@ from control.catalog import APIError
 class Command(BaseCommand):
     help='只读检查回放文件、全部迁移、目录和双活预案登记状态'
     def handle(self,*a,**kw):
-        if MigrationExecutor(connection).migration_plan([('production_scene','0003_named_pd_groups')]):
-            raise CommandError('production_scene 0001/0002/0003 迁移尚未全部应用')
+        if MigrationExecutor(connection).migration_plan([('production_scene','0005_catalog_revision')]):
+            raise CommandError('production_scene 0001–0005 迁移尚未全部应用')
         try:d=load_dataset()
         except APIError as exc:raise CommandError(exc.message) from exc
         source=CatalogImport.objects.filter(pk=d['bundle_id'],source_hash=d['catalog_source_hash']).first()

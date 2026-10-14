@@ -9,13 +9,14 @@ from control import models as m
 from control.catalog import serialize,APIError
 from control.projections import screen
 from control.views import boundary,method,body,envelope
-from .models import CatalogImport,DeploymentIdentity,BusinessPDGroupBinding,PodRegistration,EndpointPodBinding,DeploymentScope,BusinessDeploymentBinding
+from .models import NodeHardware,CatalogImport,DeploymentIdentity,BusinessPDGroupBinding,PodRegistration,EndpointPodBinding,DeploymentScope,BusinessDeploymentBinding
 from .catalog_core import digest,compile_catalog,business_contains_endpoint,NORMALIZATION_VERSION
 from .importer import import_catalog,current_revision,verify_import
 from .scenario_core import frame
 from .recovery import available_plans
 from .recovery_core import attach_plans
 from .graph_core import augment_topology
+from .hardware_core import catalog_hosts,host_context
 
 from .data_files import data_root,read_data
 
@@ -85,8 +86,8 @@ def catalog_data():
         b['deployment_scope_declared']=bool(b['deployment_scope_ids']) or BusinessPDGroupBinding.objects.filter(business_id=b['id']).exists()
         b['service_ids']=[str(x) for x in m.BusinessServiceBinding.objects.filter(business_id=b['id'],
             enabled=True,service__enabled=True).values_list('service_id',flat=True)]
-    pods=[{'id':str(x.pk),'pod_name':x.pod_name,'name':x.pod_name,'cluster_id':str(x.cluster_id),'namespace':x.namespace,'workload_ref':x.workload_ref,'node_name':x.node_name,'identity_state':x.identity_state,'observed_at':None,'pod_uid':None,'node_uid':None} for x in PodRegistration.objects.filter(cluster__enabled=True)]
-    elinks=[{'id':str(x.pk),'endpoint_id':str(x.endpoint_id),'pod_id':str(x.pod_id)} for x in EndpointPodBinding.objects.filter(endpoint__enabled=True,endpoint__cluster__enabled=True)]
+    pods=[{'id':str(x.pk),'pod_name':x.pod_name,'name':x.pod_name,'cluster_id':str(x.cluster_id),'namespace':x.namespace,'workload_ref':x.workload_ref,'node_name':x.node_name,'identity_state':x.identity_state,'observed_at':None,'pod_uid':None,'node_uid':None} for x in PodRegistration.objects.filter(cluster__enabled=True,enabled=True)]
+    elinks=[{'id':str(x.pk),'endpoint_id':str(x.endpoint_id),'pod_id':str(x.pod_id)} for x in EndpointPodBinding.objects.filter(endpoint__enabled=True,endpoint__cluster__enabled=True,pod__enabled=True)]
     output.update(pods=pods,**{'endpoint-pod-bindings':elinks})
     for ep in output['endpoints']:
         ep['pod_ids']=[x['pod_id'] for x in elinks if x['endpoint_id']==ep['id']]
@@ -95,12 +96,23 @@ def catalog_data():
     for s in output['services']:
         s['configured_businesses']=[{'id':b['id'],'name':b['name'],'pd_group_ids':b['pd_group_ids'],'deployment_scope_ids':b['deployment_scope_ids']} for b in output['businesses'] if s['id'] in b['service_ids']]
     output['business-service-bindings']=[{'business_id':b['id'],'service_id':sid,'evidence_kind':'CONFIGURED'} for b in output['businesses'] for sid in b['service_ids']]
+    output['gpu-hosts']=catalog_hosts(output)
+    hardware={str(x.pk):x for x in NodeHardware.objects.filter(cluster__enabled=True)}
+    for h in output['gpu-hosts']:
+        item=hardware.get(h['id'])
+        if item:
+            h.update(is_gpu_host=item.is_gpu_host,gpu_model=item.gpu_model,
+                     gpu_model_source=item.gpu_model_source,version=item.version)
+        else:
+            h.update(is_gpu_host=False,inventory_source='UNCONFIRMED',version=0)
     return attach_plans(output,available_plans(output))
 
 @boundary
 def catalog(request):
     method(request,{'GET'})
-    all_issues=[issue for source in CatalogImport.objects.all() for issue in compile_catalog(source.payload)['issues']]
+    from .catalog_legacy_v3 import compile_catalog as old_compile
+    from .catalog_legacy_v4 import compile_catalog as compile_v4
+    all_issues=[issue for source in CatalogImport.objects.all() for issue in (compile_catalog if source.normalization_version==5 else compile_v4 if source.normalization_version==4 else old_compile)(source.payload)['issues']]
     response=envelope({'catalog':catalog_data(),'issues':all_issues,'imports':[{'bundle_id':x.bundle_id,'source_hash':x.source_hash,'counts':x.counts,'normalization_version':x.normalization_version} for x in CatalogImport.objects.all()], 'metadata_revision':current_revision(),'csrf_token':get_token(request),'replay_enabled':bool(getattr(settings,'PRODUCTION_SCENE_REPLAY_ENABLED',False))})
     return no_store(response)
 
@@ -123,9 +135,10 @@ def imports(request,action):
 def verified_replay():
     """Both read routes share the same immutable catalog and recovery-plan gates."""
     gate();d=load_dataset()
-    source=CatalogImport.objects.filter(pk=d['bundle_id'],source_hash=d['catalog_source_hash']).first()
+    source=CatalogImport.objects.filter(pk=d['bundle_id']).first()
     if not source:raise APIError('CATALOG_IMPORT_REQUIRED','请先在 Gateway 导入对应生产目录，再开启场景回放',409)
     verify_import(source)
+    if source.source_hash!=d['catalog_source_hash']:raise APIError('CATALOG_SOURCE_MISMATCH','目录来源与当前回放不一致，请核对清单',409)
     expected={p['plan_id']:p['content_sha256'] for p in d.get('catalog',{}).get('escape-plans',[])}
     current={p['plan_id']:p['content_sha256'] for p in catalog_data().get('escape-plans',[])}
     if any(current.get(k)!=v for k,v in expected.items()):
@@ -153,7 +166,10 @@ def live(request,kind):
     def enrich(ep):
         registered=ep_lookup.get(ep['id'],{})
         for k in ['namespace','workload_kind','workload_ref','configured_nodes','pod_ids','deployment_scope_id']:ep[k]=registered.get(k,[] if k in {'configured_nodes','pod_ids'} else '')
+        ep.update(host_context({**ep,**registered},cat))
     if kind=='overview':
+        data['summary']['managed_gpu_hosts']=sum(h['is_gpu_host'] for h in cat['gpu-hosts'])
+        for hardware in data.get('hardware',[]):hardware.update(host_context(hardware,cat))
         for ep in data['items']:enrich(ep)
     elif kind=='services':
         for service in data['items']:
@@ -189,3 +205,30 @@ def topology(request):
     # Original API owns focus validation and existing scope. Only augment within it.
     graph=original_topology('anonymous',kind,ident)
     return no_store(envelope(augment_topology(graph,catalog_data(),kind,ident)))
+
+
+@boundary
+def hardware_inventory(request):
+    method(request, {'GET','POST'})
+    if request.method=='GET':
+        return no_store(envelope({'items':catalog_data()['gpu-hosts'],'metadata_revision':current_revision(),'csrf_token':get_token(request)}))
+    payload=body(request)
+    allowed={'id','expected_revision','expected_version','gpu_model','is_gpu_host','confirm'}
+    if set(payload)!=allowed or payload.get('confirm') is not True:
+        raise APIError('INVALID_HARDWARE_INPUT','需要明确确认卡型登记和完整版本字段')
+    if not isinstance(payload['gpu_model'],str) or len(payload['gpu_model'])>80 or any(ord(c)<32 for c in payload['gpu_model']):
+        raise APIError('INVALID_HARDWARE_INPUT','卡型必须为最长80字符的普通文本')
+    if type(payload['is_gpu_host']) is not bool or type(payload['expected_version']) is not int or type(payload['expected_revision']) is not int:
+        raise APIError('INVALID_HARDWARE_INPUT','无效的主机类型或版本')
+    revision,_=m.Revision.objects.select_for_update().get_or_create(pk=1)
+    if revision.metadata != payload['expected_revision']:
+        raise APIError('VERSION_CONFLICT','目录版本已变化，请刷新后重试',409)
+    obj=NodeHardware.objects.select_for_update().filter(pk=payload['id']).first()
+    if not obj:raise APIError('NOT_FOUND','请先导入本版GPU主机目录',404)
+    if obj.version!=payload['expected_version']:raise APIError('VERSION_CONFLICT','主机卡型已变化，请刷新',409)
+    from control.access import bump,audit
+    obj.gpu_model=payload['gpu_model'].strip();obj.gpu_model_source='USER_DECLARED' if obj.gpu_model else 'UNCONFIRMED'
+    obj.is_gpu_host=payload['is_gpu_host'];obj.version+=1
+    obj.full_clean();obj.save()
+    bump('metadata');audit('anonymous','gpu_host_metadata_updated',obj,{'gpu_model':obj.gpu_model,'is_gpu_host':obj.is_gpu_host,'no_telemetry_changes':True})
+    return no_store(envelope({'id':str(obj.pk),'version':obj.version,'metadata_revision':current_revision()}))

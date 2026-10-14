@@ -8,3 +8,5 @@
 .scope-detail{border:0;background:transparent;color:#d96213;font-size:12px;margin-top:8px;cursor:pointer}
 .deployment-scope-card .stages{gap:8px}.deployment-scope-card .stage{padding:10px}.deployment-scope-card .stage p{font-size:11px;line-height:1.5;overflow-wrap:anywhere}
 @media(max-width:1200px){#groups{grid-template-columns:1fr 1fr}}@media(max-width:760px){#groups{grid-template-columns:1fr}}
+
+#hardware-rows table{width:100%;border-collapse:collapse}#hardware-rows th,#hardware-rows td{padding:11px 14px;text-align:left;border-bottom:1px solid #e7edf2}#hardware-rows input:not([type=checkbox]){border:1px solid #dce4ec;border-radius:7px;padding:8px;min-width:230px;font:inherit}.hardware-note{color:#718096;font-size:13px;line-height:1.7;margin:12px 16px}#hardware-rows button{border:1px solid #ffd5bb;background:#fff3e9;color:#c95a16;padding:7px 12px;border-radius:7px}

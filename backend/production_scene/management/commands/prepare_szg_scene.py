@@ -9,12 +9,12 @@ from production_scene.importer import import_catalog, current_revision
 from production_scene.coverage_core import check_dataset
 
 class Command(BaseCommand):
-    help='准备三个 PD Group、业务和8小时数据；默认只校验，--apply 确认写入目录；不写遥测、不切流量'
+    help='准备五个 PD Group、业务和8小时数据；默认只校验，--apply 确认写入目录；不写遥测、不切流量'
     def add_arguments(self, parser):
         parser.add_argument('--apply', action='store_true')
     def handle(self, *args, **options):
-        if MigrationExecutor(connection).migration_plan([('production_scene','0003_named_pd_groups')]):
-            raise CommandError('请在停写和备份之后先执行 migrate，应用 production_scene.0003_named_pd_groups')
+        if MigrationExecutor(connection).migration_plan([('production_scene','0005_catalog_revision')]):
+            raise CommandError('请在停写和备份之后先执行 migrate，应用 production_scene.0005_catalog_revision')
         folder=data_root()
         try:
             coverage=check_dataset(json.loads((folder/'szg-8h.json').read_text()))

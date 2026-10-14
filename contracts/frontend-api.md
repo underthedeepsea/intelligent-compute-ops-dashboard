@@ -2,7 +2,7 @@
 
 All paths below start `/api/v1`, no trailing slash. Same-origin CSRF cookies; GET `/session` sets CSRF cookie and returns `data.csrf_token`. All POST/PATCH/PUT require `X-CSRFToken`. All APIs use anonymous direct access across registered environments. JSON errors: `{error:{code,message,request_id,details}}` (400/401/403/404/409). Success envelope `{schema_version:"1.0",view_revision,metadata_revision,telemetry_revision,served_at,data}`. Revisions are integers; reject older view_revision. `served_at` is response time, never sample time.
 
-GET `/session` returns `{access_mode:"direct",can_write:true,environments:[],csrf_token,data_mode:"live"}` with Cache-Control: no-store. It is access metadata, with no user, authenticated flag or roles. The frontend calls `ensureAccess()`. All registered environments are directly readable and writable; CSRF and entity environment consistency remain. Login/logout/local and public admin routes do not exist. HTTP audit actor is anonymous. Current contract: [direct access](../docs/direct-access-design.md).
+GET `/session` returns `{access_mode:"direct",can_write:true,environments:[],csrf_token,data_mode:"live"}` with Cache-Control: no-store. It is access metadata, with no user, authenticated flag or roles. The frontend calls `ensureAccess()`. All registered environments are directly readable and writable; CSRF and entity environment consistency remain. Login/logout/local and public admin routes do not exist. HTTP audit actor is anonymous. Current contract: [direct access](../README.md).
 
 GET `/catalog/{teams,businesses,models,clusters,services,pd-groups,endpoints,runtime-members}` and `/gateway/keys`: `data:{items:[],next_cursor:null}`. Optional environment_code, limit (1..100), cursor. Collection POST creates entity, details GET/PATCH; PATCH requires expected_version. No DELETE, use enabled=false. Entity common fields `{id,code,name,environment_code,enabled,version,origin}`; origin CONFIGURED/DEMO. Additional fields:
 
@@ -45,7 +45,7 @@ Approved metrics extension (2026-09-26): `/catalog/hardware-bindings` is directl
 
 ## service-entry-v1：整项服务登记
 
-正式Gateway入口使用 `/api/v1/service-entry`，复用匿名direct、同源CSRF、原有envelope和error格式；不写RuntimeMember/采样身份，也不签发Key。请求/响应精确样例见 `.codex/cost-aware/gateway-service-entry-integration-v1/evidence/api-shapes.md`；设计见 `docs/service-entry-integration-design.md`。
+正式Gateway入口使用 `/api/v1/service-entry`，复用匿名direct、同源CSRF、原有envelope和error格式；不写RuntimeMember/采样身份，也不签发Key。录入字段与操作见 [资源录入说明](../docs/catalog-entry.md)。
 
 - `GET /services?environment_code=&limit=100&cursor=`：service原对象分页目录；`GET /options?environment_code=`：父目录四集合、其版本和metadata_revision。各集合最多10000，超限报错，不静默截断。
 - `GET /services/<id>`：单快照包含service、全部groups/endpoints、businesses(binding_enabled)、runtime_members/engine_bindings只读历史、options、expected_versions、metadata_revision。

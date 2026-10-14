@@ -35,6 +35,21 @@ class BundleSafetyTests(SimpleTestCase):
         link.external_attr = 0o120777 << 16
         self.invalid_zip([(link, b'/outside')])
 
+    def test_v4_bundle_requires_namespace_correction_fixtures(self):
+        import hashlib
+        names = ['production-catalog.json', 'escape-policy.json', 'szg-8h.json', 'legacy/escape-policy-v2.json']
+        data = b'{}'
+        manifest = {'format': 'compute-dashboard-local-demo-v1', 'scene_version': 'szg8h.4',
+                    'files': [{'path': name, 'size': len(data), 'sha256': hashlib.sha256(data).hexdigest()} for name in names]}
+        with tempfile.TemporaryDirectory() as directory:
+            file = Path(directory)/'incomplete-v4.zip'
+            with zipfile.ZipFile(file, 'w') as archive:
+                archive.writestr('manifest.json', json.dumps(manifest))
+                for name in names:
+                    archive.writestr('payload/'+name, data)
+            with self.assertRaisesRegex(ValueError, '旧目录纠正'):
+                validate_bundle(file)
+
     def test_check_writes_nothing_and_apply_is_idempotent(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory) / 'data'

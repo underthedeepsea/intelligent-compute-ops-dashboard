@@ -1,0 +1,112 @@
+/* Scope is the actual SPA view, not the entry filename. Other screens retain their layout. */
+body[data-view="04"] .incident-layout:has(>.s04-pipeline){grid-template-columns:250px minmax(0,1fr) 420px;gap:16px}
+body[data-view="04"] .incident-layout:has(>.s04-pipeline)>.incident-list{padding:16px}
+body[data-view="04"] .incident-layout:has(>.s04-pipeline)>.incident-detail{padding:18px 20px}
+body[data-view="04"] .incident-layout:has(>.s04-pipeline) .incident-headline h2{font-size:23px}
+body[data-view="04"] .incident-layout:has(>.s04-pipeline) .incident-reading{gap:12px}
+body[data-view="04"] .incident-layout:has(>.s04-pipeline) .incident-reading strong{font-size:35px}
+body[data-view="04"] .incident-layout:has(>.s04-pipeline) .incident-reading b{font-size:25px}
+body[data-view="04"] .incident-layout:has(>.s04-pipeline) .incident-headline p{font-size:14px}
+.s04-pipeline{--s04-play:running;--s04-phase:0s;display:flex;flex-direction:column;min-width:0;min-height:0;padding:20px 16px 16px;overflow:auto}
+.s04-pipeline-head>span{font-size:11px;letter-spacing:1.8px;color:var(--sky,#7fb9eb)}
+.s04-pipeline-head h2{font-size:20px;line-height:1.5;overflow-wrap:anywhere;margin:7px 0;font-weight:500}
+.s04-pipeline-head p{font-size:12px;color:var(--muted);line-height:1.8;margin:0}
+.s04-model{display:flex;align-items:center;flex:1;min-height:220px;margin:6px -8px}
+.s04-model>svg{display:block;width:100%;height:auto;overflow:visible}
+.s04-stage-context{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px}
+.s04-phase,.s04-shared-context{padding:12px;border:1px solid rgba(127,185,235,.18);border-radius:8px;min-width:0;background:rgba(5,11,20,.4)}
+.s04-phase header{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px}
+.s04-phase header b,.s04-shared-context>b{font-size:13px;letter-spacing:.8px;color:#a5c6e3}
+.s04-phase button,.s04-shared-context button{display:block;text-align:left;font-size:13px;line-height:1.7;color:#e3eff7;overflow-wrap:anywhere;width:100%}
+.s04-phase small,.s04-shared-context small{display:block;font-size:11px;line-height:1.7;color:var(--muted);overflow-wrap:anywhere;margin-top:5px}
+.s04-phase p{font-size:12px;color:var(--muted);line-height:1.8}
+.s04-health{font-size:11px;border:1px solid currentColor;padding:3px 6px;border-radius:4px;white-space:nowrap}.s04-health.red{color:#ff6d7a}.s04-health.amber{color:#ffbb6b}.s04-health.mint{color:#00ffcc}.s04-health.unknown{color:#8ba2b6}
+.s04-pipeline-foot{display:flex;justify-content:space-between;gap:14px;border-top:1px solid rgba(127,185,235,.15);padding-top:12px;margin-top:14px;color:var(--muted);font-size:10px;line-height:1.8}
+.s04-pipeline .same-outline{display:none}.s04-no-transfer .cross-network{display:none}.s04-only-p .s04-part-d,.s04-only-d .s04-part-p{visibility:hidden}.s04-single .s04-part-d,.s04-single .s04-cache-part,.s04-single .s04-ground,.s04-single .v2-stage-labels,.s04-single .v2-glass-plinths{display:none}.s04-single .s04-stage-context{grid-template-columns:1fr}.s04-single .v3-p-compute,.s04-single .v3-d-decode{opacity:.7}
+.s04-unresolved{flex:1;display:grid;place-items:center;color:var(--muted);font-size:16px;line-height:1.8;padding:40px}
+/* Important animation declarations preserve this component's paused frame against the older global animation:none rule. */
+.s04-pipeline .v2-fiber{stroke-dasharray:38 72 6 119;animation:s04-stream var(--speed,4.8s) linear infinite!important;animation-delay:calc(var(--offset,0s) + var(--s04-phase,0s))!important}
+.s04-pipeline .v3-p-chunk{stroke-dasharray:22 78;animation:s04-chunk 2.8s linear infinite!important;animation-delay:calc(var(--phase,0s) + var(--s04-phase,0s))!important}
+.s04-pipeline .v3-p-compute{animation:s04-compute 2.8s ease-in-out infinite!important;animation-delay:calc(var(--phase,0s) + var(--s04-phase,0s))!important}
+.s04-pipeline .v3-d-decode{transform-box:fill-box;transform-origin:left;animation:s04-decode 3.6s steps(7,end) infinite!important;animation-delay:calc(var(--phase,0s) + var(--s04-phase,0s))!important}
+.s04-pipeline .v3-kv-transfer{transform-box:fill-box;transform-origin:center;animation:s04-transfer 4.8s linear infinite!important;animation-delay:calc(var(--phase,0s) + var(--s04-phase,0s))!important}
+.s04-pipeline .v3-front-trail{animation:s04-trail 6s linear infinite!important;animation-delay:calc(var(--phase,0s) + var(--s04-phase,0s))!important}
+.s04-pipeline .v2-token{transform-box:fill-box;transform-origin:center;animation:s04-token-scatter var(--s04-token-period,4.4s) linear infinite!important;animation-delay:calc(var(--offset,0s) + var(--s04-phase,0s))!important}
+.s04-pipeline .animated,.s04-pipeline .v3-p-chunk{animation-play-state:var(--s04-play)!important}
+body.motion-off .s04-pipeline,body.page-hidden .s04-pipeline,#app-shell[inert] .s04-pipeline{--s04-play:paused}
+@keyframes s04-stream{to{stroke-dashoffset:-1000}}@keyframes s04-chunk{to{stroke-dashoffset:-100}}@keyframes s04-compute{0%,12%,85%,100%{opacity:.14}35%,60%{opacity:.9}}@keyframes s04-decode{0%{transform:scaleX(.05);opacity:.25}75%,90%{transform:scaleX(1);opacity:.9}100%{transform:scaleX(.05);opacity:.25}}@keyframes s04-transfer{0%{transform:translate(-22px,-3.3px);opacity:.08}23%,77%{opacity:.8}50%{transform:translate(0,0);opacity:.85}100%{transform:translate(22px,3.3px);opacity:.08}}@keyframes s04-trail{to{stroke-dashoffset:-1000}}@keyframes s04-token{0%{transform:translate(-14px,-2px);opacity:.06}20%,70%{opacity:.9}100%{transform:translate(26px,4px);opacity:.06}}
+@media(prefers-reduced-motion:reduce){body[data-view="04"] .s04-pipeline .animated,body[data-view="04"] .s04-pipeline .v3-p-chunk{animation-play-state:paused!important;transition:none!important}}
+@media(max-width:1000px){body[data-view="04"] .incident-layout:has(>.s04-pipeline){grid-template-columns:1fr}body[data-view="04"] .incident-layout:has(>.s04-pipeline)>.incident-list{max-height:460px}.s04-pipeline{min-height:490px;overflow:visible}.s04-model{min-height:210px}.s04-pipeline-foot{flex-wrap:wrap}}
+@media(max-width:520px){.s04-stage-context{grid-template-columns:1fr}.s04-pipeline{padding:16px 12px}.s04-pipeline-head h2{font-size:18px}.s04-pipeline-foot{font-size:10px}.s04-phase header b{font-size:12px}}
+
+.s04-pipeline .s04-shared-decode{display:none}.s04-shared .s04-shared-decode{display:block}
+
+/* 04 volume and independent status lights: hardware edges retain fixed v3 materials. */
+.s04-pipeline{--s04-p-health:#8196a8;--s04-d-health:#8196a8;--s04-shared-health:#8196a8}
+.s04-pipeline[data-p-health="mint"]{--s04-p-health:#3cffb0}.s04-pipeline[data-p-health="amber"]{--s04-p-health:#ffc54d}.s04-pipeline[data-p-health="red"]{--s04-p-health:#ff5e72}
+.s04-pipeline[data-d-health="mint"]{--s04-d-health:#3cffb0}.s04-pipeline[data-d-health="amber"]{--s04-d-health:#ffc54d}.s04-pipeline[data-d-health="red"]{--s04-d-health:#ff5e72}
+.s04-pipeline[data-shared-health="mint"]{--s04-shared-health:#3cffb0}.s04-pipeline[data-shared-health="amber"]{--s04-shared-health:#ffc54d}.s04-pipeline[data-shared-health="red"]{--s04-shared-health:#ff5e72}
+.s04-pipeline .s04-part-p{--s04-unit-health:var(--s04-p-health)}.s04-pipeline .s04-part-d{--s04-unit-health:var(--s04-d-health)}
+.s04-shared .s04-part-p{--s04-unit-health:var(--s04-shared-health)}
+.s04-pipeline .v3-kv-transfer{stroke-width:1.8;fill-opacity:.48}
+
+/* Constrain the conceptual drawing to its flex slot, including the enlarged shared-Pod view. */
+.s04-pipeline .s04-model{position:relative;overflow:hidden}
+.s04-pipeline .s04-model>svg{position:absolute;inset:0;width:100%;height:100%}
+
+/* Health is carried only by discrete lenses seated on the front and top faces. No edge glow or face tint. */
+.s04-pipeline .s04-lamp-lens{fill:var(--s04-unit-health,#8196a8);stroke:none}
+.s04-pipeline .s04-status-lamps{pointer-events:none}
+/* Wide transparent volumes, sparse directional texture; no asserted KV-link health source. */
+.s04-pipeline .s04-ribbon-band{pointer-events:none}
+
+/* One deforming stream, one continuous centerline; no new JavaScript frame loop. */
+.s04-pipeline .s04-liquid-wave{animation:s04-liquid-wave 17s ease-in-out infinite!important;animation-delay:var(--s04-phase,0s)!important;animation-play-state:var(--s04-play)!important;pointer-events:none;stroke-dasharray:none}
+@keyframes s04-liquid-wave{0%,100%{d:path("M565 505 C690 480 870 530 1055 505")}23%{d:path("M565 505 C690 529 870 465 1055 505")}57%{d:path("M565 505 C690 457 870 545 1055 505")}81%{d:path("M565 505 C690 517 870 488 1055 505")}}
+.s04-pipeline .s04-lamp-active{filter:drop-shadow(0 0 2.4px var(--s04-unit-health,#8196a8));animation:s04-lamp-activity var(--s04-lamp-period,4.7s) ease-in-out infinite!important;animation-delay:calc(var(--s04-lamp-offset,0s) + var(--s04-phase,0s))!important;animation-play-state:var(--s04-play)!important}
+@keyframes s04-lamp-activity{0%,100%{opacity:.68}18%{opacity:.95}29%{opacity:.62}47%{opacity:1}63%{opacity:.7}82%{opacity:.9}}
+.s04-pipeline[data-p-health="unknown"]:not(.s04-shared) .s04-part-p .s04-lamp-active,.s04-pipeline[data-d-health="unknown"] .s04-part-d .s04-lamp-active,.s04-shared[data-shared-health="unknown"] .s04-part-p .s04-lamp-active{animation-play-state:paused!important;filter:none;opacity:.8}
+
+/* Health plaques reuse the phase status variables, independently of neutral aurora transport. */
+.s04-pipeline .s04-plaque-p{--s04-plaque-health:var(--s04-p-health)}.s04-pipeline .s04-plaque-d{--s04-plaque-health:var(--s04-d-health)}
+.s04-pipeline .s04-plaque-wash{fill:var(--s04-plaque-health,#8196a8);fill-opacity:.24}
+.s04-pipeline .s04-role-letter{fill:var(--s04-plaque-health,#8196a8)}
+.s04-pipeline .s04-plaque-shared-wash{display:none;fill-opacity:.22}
+.s04-pipeline[data-pipeline-mode="shared"] .s04-plaque-full{display:none}
+.s04-pipeline[data-pipeline-mode="shared"] .s04-plaque-shared-wash{display:block}
+.s04-pipeline .s04-shared-p-wash,.s04-pipeline .s04-shared-p-letter{fill:var(--s04-p-health,#8196a8)}
+.s04-pipeline .s04-shared-d-wash,.s04-pipeline .s04-shared-d-letter{fill:var(--s04-d-health,#8196a8)}
+.s04-pipeline .s04-shared-slash{fill:#b5c8d9}
+.s04-pipeline[data-pipeline-mode="combined"] .s04-plaque-p{--s04-plaque-health:var(--s04-shared-health)}
+
+/* 04 only: one application owns the model and instance context. */
+body[data-view="04"] .incident-layout:has(>.s04-application-view){grid-template-columns:250px minmax(0,1fr) 420px;gap:16px}
+.s04-application-view{display:flex;flex-direction:column;min-height:0;min-width:0;overflow:auto}.s04-application-view>.s04-pipeline{flex:1;overflow:visible}.s04-app-heading{display:flex;align-items:center;gap:12px;padding:8px 16px}.s04-app-heading h2{font-size:22px;font-weight:500}.s04-instance-choices{display:flex;gap:8px;flex-wrap:wrap;padding:8px}.s04-instance-choices button{font-size:11px;overflow-wrap:anywhere;text-align:left}.s04-instance-choices [aria-pressed="true"]{background:rgba(127,185,235,.12)}
+@media(max-width:1000px){body[data-view="04"] .incident-layout:has(>.s04-application-view){grid-template-columns:1fr}}
+
+/* D output only: one fixed outlet, depth-staggered outward trajectories. */
+@keyframes s04-token-scatter{0%{transform:translate(0,0) scale(.32);opacity:0}12%{opacity:.66}62%{opacity:.82}100%{transform:translate(var(--s04-token-dx),var(--s04-token-dy)) scale(var(--s04-token-depth));opacity:0}}
+
+/* Masked-only grid; all other screens retain their existing components. */
+.masked04-v13{height:100%;min-height:0;display:flex;flex-direction:column}.masked04-grid{display:grid;grid-template-columns:220px minmax(0,1fr) 350px;gap:16px;flex:1;min-height:0}.masked04-apps,.masked04-evidence{padding:18px;min-width:0;overflow:auto}.masked04-apps{display:flex;flex-direction:column}.masked04-apps h2,.masked04-evidence h2{font-size:20px}.masked04-center{display:flex;flex-direction:column;min-height:0;min-width:0;overflow:auto}.masked04-center>.s04-pipeline{flex:1}.masked04-business{display:flex;gap:12px;align-items:center;margin:8px 0}.masked04-business h2{font-size:23px}.masked04-endpoints,.masked04-code{display:flex;gap:7px;flex-wrap:wrap;padding:8px 0}.masked04-evidence h3{font-size:19px;margin:20px 0 8px}.masked04-evidence p{font-size:13px;line-height:1.8;color:var(--muted)}.masked04-evidence .safe-chart.large{height:200px}.masked04-endpoints [aria-pressed="true"]{background:rgba(127,185,235,.15)}
+@media(max-width:1000px){.masked04-grid{grid-template-columns:1fr}.masked04-v13{height:auto}.masked04-apps .diag-queue{max-height:250px}.masked04-center>.s04-pipeline{min-height:500px}.masked04-evidence{min-height:350px}}
+
+#stage[inert] .s04-pipeline{--s04-play:paused}
+
+/* Candidate2: chart and prose occupy separate normal-flow rows in 04 only. */
+.masked04-evidence .safe-chart.large{height:auto;display:grid;grid-template-rows:180px auto;gap:8px;overflow:visible;margin:18px 0 20px;min-height:0}
+.masked04-evidence .safe-chart.large>svg{position:static;inset:auto;display:block;width:100%;height:180px;min-height:0}
+.masked04-evidence .safe-chart.large>figcaption{position:static;inset:auto;display:flex;flex-wrap:wrap;align-items:flex-start;gap:4px 8px;height:auto;line-height:1.6;margin:0;font-size:10px}
+.masked04-evidence>.safe-chart+button{margin-top:0}.masked04-evidence>p{position:static;margin:14px 0;line-height:1.8}
+
+/* 04 top application tabs use 02's existing visual language; 02 itself is untouched. */
+.masked04-app-tabs{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px;flex-shrink:0;margin:10px 0 14px}.masked04-app-tabs .group-tab{min-width:0;padding:12px 14px;display:flex;flex-direction:column;align-items:flex-start;gap:8px;text-align:left}.masked04-app-tabs strong{font-size:17px;white-space:normal;overflow-wrap:anywhere}.masked04-app-tabs .selected{border-color:var(--accent);background:rgba(0,255,204,.07)}.masked04-grid{grid-template-columns:minmax(0,1fr) 350px}.masked04-code{display:grid;grid-template-columns:1fr;gap:7px}.masked04-code button{display:flex;align-items:center;justify-content:space-between;text-align:left;gap:8px;white-space:normal}.masked04-code [aria-pressed="true"]{background:rgba(127,185,235,.15)}
+@media(max-width:1000px){.masked04-app-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}.masked04-grid{grid-template-columns:1fr}}
+
+/* v14.2: one grid row owns both card boundaries; selectors stay below. */
+.masked04-grid{grid-template-rows:minmax(0,1fr) auto;align-items:stretch}
+.masked04-center{display:contents}
+.masked04-center>.s04-pipeline,.masked04-center>.pd-empty{grid-column:1;grid-row:1;min-height:0}
+.masked04-evidence{grid-column:2;grid-row:1;height:auto;min-height:0;align-self:stretch;overflow:auto}
+.masked04-endpoints{grid-column:1;grid-row:2}
+@media(max-width:1000px){.masked04-grid{grid-template-columns:1fr;grid-template-rows:auto auto auto}.masked04-center>.s04-pipeline,.masked04-center>.pd-empty{grid-column:1;grid-row:1;min-height:490px}.masked04-endpoints{grid-row:2}.masked04-evidence{grid-column:1;grid-row:3}}

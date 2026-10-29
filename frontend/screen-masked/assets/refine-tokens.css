@@ -1,0 +1,16 @@
+/* CONTRACT: change tokens deliberately; do not append screen-specific font overrides. */
+:root{
+ --bg:#050b14;--surface-base:#0a172b;--accent:#00ffcc;--accent-soft:#73ddca;
+ --sky:#7fb9eb;--warning:#ffbb6b;--danger:#ff6d7a;--text:#e8f1f6;
+ --secondary:#aec1cf;--muted:#829dad;--border:rgba(127,185,208,.17);
+ --font-ui:-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei','Noto Sans CJK SC',sans-serif;
+ --font-number:'Aptos Display','SF Pro Display','Helvetica Neue',Arial,sans-serif;
+ --font-code:'SF Mono',Menlo,Consolas,monospace;
+ --fs-display:52px;--fs-title:32px;--fs-panel:21px;--fs-body:18px;--fs-meta:16px;
+ --radius:22px;--radius-small:14px;--gap:20px;--padding:24px;
+ --glass:linear-gradient(132deg,rgba(22,45,61,.58),rgba(8,23,38,.67));
+ --glass-focus:linear-gradient(120deg,rgba(17,64,69,.39),rgba(9,24,38,.48) 52%,rgba(21,46,78,.42));
+ --inset:inset 0 1px 0 rgba(203,245,245,.12),inset 0 -1px 0 rgba(0,0,0,.15);
+ --shadow:0 16px 44px rgba(0,4,12,.17);--ease:cubic-bezier(.22,1,.36,1);
+ --motion-fast:180ms;--motion-page:260ms;--motion-ambient:32s;
+}

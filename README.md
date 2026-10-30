@@ -1,6 +1,6 @@
 # 智算运维大屏
 
-## r13a · 分钟状态轨迹（待远端发布）
+## v0.8.1 · 分钟状态轨迹
 
 五屏正式脱敏入口为`/screen-masked/?screen=01`至`05`。03保留已确认CPU、内存和存储模型，修复内存/存储动效及开关恢复；右侧显示当前异常、三项状态与已有回放状态轨迹。04保留P/D/KV模型，五项阶段指标同屏，流量/吞吐等相对比较使用文字，替代过矮折线与旧分区仪表。深青蓝玻璃面板保留黄红异常提示及持续轨道粒子及轻微上浮短尾，关键信息无需鼠标键盘展开。
 
@@ -20,7 +20,7 @@
 
 ### 本地部署包
 
-当前候选包为`intelligent-compute-ops-dashboard-minute-r13a-20261030.zip`及同名`.sha256`；GitHub连接失败，尚未更新远端Release。包只含脱敏前端、同版回放数据和启动说明，不含数据库、Gateway或私密配置。
+从[Release](https://github.com/underthedeepsea/intelligent-compute-ops-dashboard/releases/tag/v0.8.1)下载`intelligent-compute-ops-dashboard-v0.8.1-20261030.zip`及同名`.sha256`。包只含脱敏前端、同版回放数据和启动说明，不含数据库、Gateway或私密配置。
 
 完整解压并进入包目录，macOS/Linux执行`sh ./START_LOCAL.sh`，Windows执行`START_LOCAL.cmd`。需要Python3.10+，无pip/npm安装。默认地址：
 - `http://127.0.0.1:18771/screen-masked/?screen=03`

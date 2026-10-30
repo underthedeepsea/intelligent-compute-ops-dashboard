@@ -1,24 +1,26 @@
 # 智算运维大屏
 
-## v0.8.0 · 正式脱敏大屏
+## r13a · 分钟状态轨迹（待远端发布）
 
-五屏正式脱敏入口为`/screen-masked/?screen=01`至`05`。03保留已确认CPU、内存和存储模型，修复内存/存储动效及开关恢复；右侧显示当前异常、三项状态与已有回放状态轨迹。04保留P/D/KV模型，五项阶段指标同屏，流量/吞吐等相对比较使用文字，替代过矮折线与旧分区仪表。深青蓝玻璃面板保留黄红异常提示及柔和错峰流光，关键信息无需鼠标键盘展开。
+五屏正式脱敏入口为`/screen-masked/?screen=01`至`05`。03保留已确认CPU、内存和存储模型，修复内存/存储动效及开关恢复；右侧显示当前异常、三项状态与已有回放状态轨迹。04保留P/D/KV模型，五项阶段指标同屏，流量/吞吐等相对比较使用文字，替代过矮折线与旧分区仪表。深青蓝玻璃面板保留黄红异常提示及持续轨道粒子及轻微上浮短尾，关键信息无需鼠标键盘展开。
+
+20分钟观察窗以1分钟/点呈现，原生60秒源保留原点；30秒演示数据按真实分钟归并，不插值、不取未来采样。菱形和指定重复说明已移除。
 
 使用同版`masked.v3`脱敏回放：没有原始读数或阈值；相对比较不等于健康判定，光效不代表实测流量。未提供或待确认的数据使用中性色，不补造正常状态。
 
 | 01 全局总览 | 02 推理部署 |
 | --- | --- |
-| ![脱敏01](docs/images/masked-glass-20261030/screen01.jpg) | ![脱敏02](docs/images/masked-glass-20261030/screen02.jpg) |
+| ![脱敏01](docs/images/masked-minute-20261030/screen01.jpg) | ![脱敏02](docs/images/masked-minute-20261030/screen02.jpg) |
 
-![脱敏03](docs/images/masked-glass-20261030/screen03.jpg)
+![脱敏03](docs/images/masked-minute-20261030/screen03.jpg)
 
-![脱敏04](docs/images/masked-glass-20261030/screen04.jpg)
+![脱敏04](docs/images/masked-minute-20261030/screen04.jpg)
 
-![脱敏05](docs/images/masked-glass-20261030/screen05.jpg)
+![脱敏05](docs/images/masked-minute-20261030/screen05.jpg)
 
 ### 本地部署包
 
-从[Release](https://github.com/underthedeepsea/intelligent-compute-ops-dashboard/releases)下载`intelligent-compute-ops-dashboard-v0.8.0-20261030.zip`及同名`.sha256`。包只含脱敏前端、同版回放数据和启动说明，不含数据库、Gateway或私密配置。
+当前候选包为`intelligent-compute-ops-dashboard-minute-r13a-20261030.zip`及同名`.sha256`；GitHub连接失败，尚未更新远端Release。包只含脱敏前端、同版回放数据和启动说明，不含数据库、Gateway或私密配置。
 
 完整解压并进入包目录，macOS/Linux执行`sh ./START_LOCAL.sh`，Windows执行`START_LOCAL.cmd`。需要Python3.10+，无pip/npm安装。默认地址：
 - `http://127.0.0.1:18771/screen-masked/?screen=03`
@@ -28,7 +30,7 @@
 
 从源码仅预览脱敏版也可执行`python3 -m http.server 18771 --bind 127.0.0.1 --directory frontend`。Django与Nginx挂载只开放21个已列明资源，其余路径不作为脱敏资源暴露。
 
-已检查1920×1080与1280×720、正常/异常/真实UNKNOWN回放、播放与暂停、P/D指标归属及其余三屏。来源断开与减少动态效果另有本地模拟验证；这些不替代真实采集或操作系统验证。电视远距、连续长播、Windows实际运行仍未验收。详细范围见[发布验证说明](docs/masked-glass-release-validation.md)。
+本版已检查03/04在1920×1080与1280×720的正常、告警和真实UNKNOWN、粒子及暂停恢复；01/02/05在1920重新查看。此前来源断开与减少动态模拟不作为本版新验收。电视远距、连续长播、Windows实际运行仍未验收。详细范围见[发布验证说明](docs/masked-minute-release-validation.md)。
 
 
 **Intelligent Compute Ops Dashboard · v0.7.0**
